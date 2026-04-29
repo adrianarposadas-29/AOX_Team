@@ -6,11 +6,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AoX Ops">
+<meta name="apple-mobile-web-app-title" content="Full Arch Ops">
 <meta name="theme-color" content="#052030">
 <link rel="manifest" href="file:///C:/Users/AdrianaPosadas/Downloads/manifest.json">
 <link rel="apple-touch-icon" href="file:///C:/Users/AdrianaPosadas/Downloads/icons/apple-touch-icon.png">
-<title>AoX RAID Log — Spectrum Killian</title>
+<title>Full Arch Business Unit — RAID Log</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
 
@@ -408,7 +408,7 @@ textarea.form-input{min-height:80px;resize:vertical}
 .otd-heatmap-cell.amber { background:#d97706; }
 .otd-heatmap-cell.green { background:#16a34a; }
 .otd-heatmap-cell.empty { background:#eef2f7; }
-.otd-heatmap-row-lbl { font-size:11px; font-weight:600; color:var(--spectrum-blue); padding-right:10px; white-space:nowrap; min-width:170px; }
+.otd-heatmap-row-lbl { font-size:11px; font-weight:600; color:var(--spectrum-blue); padding-right:10px; white-space:nowrap; min-width:230px; overflow:hidden; text-overflow:ellipsis; }
 .otd-heatmap-col-lbl { font-size:9px; color:var(--muted); text-align:center; white-space:nowrap; padding:0 1px; }
 .otd-heatmap-empty { padding:30px 16px; text-align:center; color:var(--muted); font-size:12px; }
 
@@ -770,7 +770,7 @@ textarea.form-input{min-height:80px;resize:vertical}
     <span class="brand">SPECTRUM KILLIAN</span>
   </div>
   <div class="topbar-divider"></div>
-  <div class="topbar-title">AoX BU — RAID Log</div>
+  <div class="topbar-title">Full Arch Business Unit</div>
   <div class="topbar-date" id="live-date">Wednesday, April 29, 2026</div>
   <button class="topbar-refresh" id="hdr-refresh-btn" onclick="loadData()" title="Refresh data" style="background: rgba(255, 255, 255, 0.12); border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; color: rgb(255, 255, 255); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; font-weight: 600; margin-left: 4px; opacity: 1;">↻ Refresh</button>
 </header>
@@ -1167,7 +1167,7 @@ textarea.form-input{min-height:80px;resize:vertical}
       <td><span class="badge badge-risk">Risk</span></td>
       <td><span class="badge badge-critical">Critical</span></td>
       <td><span class="badge badge-sev-high">High</span></td>
-      <td><div class="issue-text">Overall AOX Capacity not aligned with volume needs</div></td>
+      <td><div class="issue-text">Overall Full Arch Capacity not aligned with volume needs</div></td>
       <td><div class="mitigation-text">Allan moved to Case Review; Sam CC Lead; open positions monitored</div></td>
       <td style="white-space:nowrap;font-size:12px">Scott</td>
       <td><span class="badge badge-open">Open</span></td>
@@ -2165,7 +2165,7 @@ textarea.form-input{min-height:80px;resize:vertical}
 <div class="view" id="view-otd">
 
   <div class="otd-hero">
-    <div><div class="otd-hero-title">AoX Operations</div><div class="otd-hero-name">📈 On-Time Delivery Tracker</div></div>
+    <div><div class="otd-hero-title">Full Arch Operations</div><div class="otd-hero-name">📈 On-Time Delivery Tracker</div></div>
     <div class="otd-date-nav">
       <select id="otd-range-type" class="otd-range-sel" onchange="otdSetRangeType()" title="Date range">
         <option value="day">Day</option>
@@ -2235,7 +2235,7 @@ textarea.form-input{min-height:80px;resize:vertical}
 <!-- METRIC OWNERS VIEW -->
 <div class="view" id="view-mowners">
   <div class="otd-hero" style="margin-bottom:20px">
-    <div><div class="otd-hero-title">AoX Operations</div><div class="otd-hero-name">👥 Metric Owners</div></div>
+    <div><div class="otd-hero-title">Full Arch Operations</div><div class="otd-hero-name">👥 Metric Owners</div></div>
   </div>
   <div class="mowner-card">
     <div class="mowner-hd">📌 Static Metric Owner Assignments</div>
@@ -3537,10 +3537,73 @@ async function saveOTD(op) {
     const ex = otdRows[op];
     if (ex) await sbFetch(`otd_entries?id=eq.${ex.id}`,'PATCH',payload);
     else { const r = await sbFetch('otd_entries','POST',payload); if(r?.[0]) otdRows[op]=r[0]; }
+
+    // Auto-link to RAID log when there's a miss with reason + action
+    if (isMiss && reason && action) {
+      try { await syncOTDtoRAID(op, otdDate, owner, reason, action, pct, lat); }
+      catch(e) { console.warn('RAID auto-link failed:', e); }
+    }
+
     const btn = g(`otd-c-${s}`)?.querySelector('.otd-save');
     if (btn) { btn.textContent='✓ Saved'; btn.classList.add('ok'); setTimeout(()=>{btn.textContent='Save';btn.classList.remove('ok');},1800); }
-    await loadOTD(); toast('Saved: '+op);
+
+    await loadOTD();
+    // clear the saved card so it's ready for the next day's entry
+    clearOTDCard(s);
+    // refresh RAID-log-derived views in the background so the new item shows up everywhere
+    refreshRAIDInBackground();
+
+    toast('Saved: '+op);
   } catch(e) { alert('Error: '+e.message); }
+}
+
+/* Clear a single operation card's inputs so it's ready for next entry */
+function clearOTDCard(s) {
+  const g = id => document.getElementById(id);
+  ['otd-pln-','otd-act-','otd-lat-','otd-rmk-','otd-rsn-','otd-actn-'].forEach(p => {
+    const el = g(p+s); if (el) el.value = '';
+  });
+  const pctEl = g('otd-pct-'+s); if (pctEl) pctEl.value = '—';
+  const pillEl = g('otd-p-'+s);
+  if (pillEl) { pillEl.textContent = '—'; pillEl.className = 'otd-pill empty'; }
+  ['otd-rsn-tag-','otd-act-tag-'].forEach(p => { const t=g(p+s); if(t) t.style.display='none'; });
+  ['otd-rsn-','otd-actn-'].forEach(p => g(p+s)?.classList.remove('req-empty'));
+}
+
+/* Push (or update) a RAID log entry derived from this OTD miss */
+async function syncOTDtoRAID(op, date, owner, reason, action, pct, lateCount) {
+  const issueTitle = `OTD Miss — ${op} (${date})`;
+  // look up an existing RAID item with the same auto-link title
+  const existing = await sbFetch(`raid_items?issue=eq.${encodeURIComponent(issueTitle)}`);
+  const sev   = (pct !== null && pct < 80) ? 'High'     : (pct !== null && pct < 95) ? 'Medium' : 'Medium';
+  const prio  = (pct !== null && pct < 80) ? 'High'     : 'Medium';
+  const notesText = `${reason}\n\n[Auto-linked from OTD Tracker · ${date} · ${pct!==null?pct+'% OTD':''} · Late: ${lateCount}]`;
+  const payload = {
+    issue:          issueTitle,
+    type:           'Issue',
+    severity:       sev,
+    mitigation:     action,
+    owner:          owner || '',
+    status:         'Open',
+    priority:       prio,
+    date_initiated: date,
+    impact:         3,
+    effort:         2,
+    notes:          notesText,
+    updated_at:     new Date().toISOString()
+  };
+  if (existing && existing.length) {
+    await sbFetch(`raid_items?id=eq.${existing[0].id}`, 'PATCH', payload);
+  } else {
+    await sbFetch('raid_items', 'POST', payload);
+  }
+}
+
+/* Refresh main RAID DATA + dependent views without blocking the OTD save */
+function refreshRAIDInBackground() {
+  if (typeof loadData === 'function') {
+    loadData().catch(e => console.warn('RAID refresh failed:', e));
+  }
 }
 
 /* ---------- daily summary table (aggregates over selected range) ---------- */
@@ -3704,7 +3767,7 @@ function renderHeatmap() {
   });
 
   const colCount = buckets.length;
-  const gridStyle = `grid-template-columns: 180px repeat(${colCount}, 22px);`;
+  const gridStyle = `grid-template-columns: 240px repeat(${colCount}, 22px);`;
 
   // header row
   const headerCells = `<div></div>` + buckets.map(b =>
@@ -3712,6 +3775,7 @@ function renderHeatmap() {
   ).join('');
 
   // op rows
+  const owners = mownersGetAll();
   const rows = OTD_OPS.map(op => {
     const cells = buckets.map(b => {
       let p=0,a=0,l=0,n=0;
@@ -3724,10 +3788,13 @@ function renderHeatmap() {
       else if (a>0) pct = Math.max(0,Math.round((a-l)/a*100));
       let cls = 'empty';
       if (pct !== null) cls = pct >= 95 ? 'green' : pct >= 80 ? 'amber' : 'red';
-      const title = `${op} · ${b.title}` + (pct!==null ? ` · ${pct}%` : ' · no data');
+      const ownerForCell = owners[op] || (byOpDate[op] ? Object.values(byOpDate[op]).map(r=>r.supervisor).find(s=>s) : '') || '';
+      const title = `${op}${ownerForCell ? ' ('+ownerForCell+')' : ''} · ${b.title}` + (pct!==null ? ` · ${pct}%` : ' · no data');
       return `<div class="otd-heatmap-cell ${cls}" title="${esc(title)}"></div>`;
     }).join('');
-    return `<div class="otd-heatmap-row-lbl">${esc(op)}</div>${cells}`;
+    const owner = owners[op] || '';
+    const lbl = owner ? `${op} <span style="color:var(--muted);font-weight:500">(${esc(owner)})</span>` : esc(op);
+    return `<div class="otd-heatmap-row-lbl">${lbl}</div>${cells}`;
   }).join('');
 
   wrap.innerHTML = `<div class="otd-heatmap-grid" style="${gridStyle}">${headerCells}${rows}</div>`;
