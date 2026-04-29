@@ -373,6 +373,62 @@ textarea.form-input{min-height:80px;resize:vertical}
 .otd-save:hover { background:#1470ac; }
 .otd-save.ok { background:#16a34a; }
 
+/* ── OTD font bump (+1pt) ── */
+.otd-hero-title { font-size:12px; }
+.otd-hero-name { font-size:19px; }
+.otd-date-lbl { font-size:15px; }
+.otd-kval { font-size:31px; }
+.otd-klbl { font-size:11px; }
+.otd-summary-hd { font-size:14px; }
+.otd-summary-table { font-size:13px; }
+.otd-summary-table th { font-size:11px; }
+.otd-summary-table td { padding:9px 12px; }
+.otd-card-name { font-size:14px; }
+.otd-pill { font-size:12px; }
+.otd-flbl { font-size:11px; }
+.otd-inp { font-size:14px; }
+.otd-save { font-size:13px; }
+
+/* ── OTD range / date controls ── */
+.otd-range-sel { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:5px 9px; color:var(--white); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.otd-range-sel option { color:#222; }
+.otd-date-inp { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:5px 9px; color:var(--white); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.otd-range-info { background:var(--off-white); border-left:3px solid var(--killian-blue); border-radius:6px; padding:8px 14px; margin-bottom:14px; font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:18px; }
+.otd-range-info strong { color:var(--spectrum-blue); font-weight:700; }
+
+/* ── OTD heat map ── */
+.otd-heatmap-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; margin-bottom:20px; }
+.otd-heatmap-hd { padding:12px 16px; background:var(--spectrum-blue); color:var(--white); font-size:14px; font-weight:700; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.otd-heatmap-legend { font-size:11px; font-weight:600; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.otd-heatmap-legend .swatch { width:12px; height:12px; border-radius:2px; display:inline-block; vertical-align:middle; margin-right:4px; }
+.otd-heatmap-wrap { padding:14px 16px 18px; overflow-x:auto; }
+.otd-heatmap-grid { display:grid; gap:3px; min-width:max-content; align-items:center; }
+.otd-heatmap-cell { width:18px; height:18px; border-radius:3px; background:#eef2f7; cursor:default; }
+.otd-heatmap-cell.red { background:#dc2626; }
+.otd-heatmap-cell.amber { background:#d97706; }
+.otd-heatmap-cell.green { background:#16a34a; }
+.otd-heatmap-cell.empty { background:#eef2f7; }
+.otd-heatmap-row-lbl { font-size:11px; font-weight:600; color:var(--spectrum-blue); padding-right:10px; white-space:nowrap; min-width:170px; }
+.otd-heatmap-col-lbl { font-size:9px; color:var(--muted); text-align:center; white-space:nowrap; padding:0 1px; }
+.otd-heatmap-empty { padding:30px 16px; text-align:center; color:var(--muted); font-size:12px; }
+
+/* ── OTD action / required field ── */
+.otd-inp.req-empty { border-color:#dc2626; background:#fef2f2; }
+.otd-inp.ro-static { background:var(--off-white); color:var(--spectrum-blue); font-weight:600; pointer-events:none; }
+.otd-req-tag { font-size:10px; font-weight:700; color:#dc2626; margin-left:6px; letter-spacing:.04em; }
+
+/* ── Metric Owners tab ── */
+.mowner-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:16px; }
+.mowner-hd { font-size:15px; font-weight:700; color:var(--spectrum-blue); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.mowner-sub { font-size:12px; color:var(--muted); margin-bottom:14px; }
+.mowner-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.mowner-tbl th { background:#f4f8fc; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); }
+.mowner-tbl td { padding:8px 12px; border-bottom:1px solid #f0f4f8; vertical-align:middle; }
+.mowner-tbl tr:last-child td { border-bottom:none; }
+.mowner-tbl input { border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-family:inherit; font-size:13px; color:var(--spectrum-blue); font-weight:600; width:100%; }
+.mowner-tbl input:focus { outline:none; border-color:var(--killian-blue); box-shadow:0 0 0 3px rgba(24,130,199,.12); }
+.mowner-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+
 @media(max-width:900px){
   .kpi-row{grid-template-columns:repeat(3,1fr)}
   .dash-grid,.matrix-container{grid-template-columns:1fr;flex-direction:column}
@@ -730,6 +786,7 @@ textarea.form-input{min-height:80px;resize:vertical}
   <div class="nav-tab" onclick="setTab(&#39;matrix&#39;,this)">🎯 Impact vs Effort</div>
   <div class="nav-tab" onclick="setTab(&#39;wins&#39;,this)">🏆 Daily Wins <span class="count" id="wins-count">—</span></div>
   <div class="nav-tab" onclick="setTab(&#39;otd&#39;,this)">📈 OTD Tracker <span class="count" id="otd-badge">—</span></div>
+  <div class="nav-tab" onclick="setTab(&#39;mowners&#39;,this)">👥 Metric Owners</div>
 </nav>
 
 <!-- DASHBOARD VIEW -->
@@ -2110,12 +2167,29 @@ textarea.form-input{min-height:80px;resize:vertical}
   <div class="otd-hero">
     <div><div class="otd-hero-title">AoX Operations</div><div class="otd-hero-name">📈 On-Time Delivery Tracker</div></div>
     <div class="otd-date-nav">
-      <button class="otd-date-btn" onclick="otdNav(-1)">‹</button>
+      <select id="otd-range-type" class="otd-range-sel" onchange="otdSetRangeType()" title="Date range">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="quarter">Quarter</option>
+        <option value="year">Year</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      <button class="otd-date-btn" onclick="otdNav(-1)" title="Previous">‹</button>
       <div class="otd-date-lbl" id="otd-lbl">—</div>
-      <button class="otd-date-btn" onclick="otdNav(+1)">›</button>
-      <input type="date" id="otd-pick" onchange="otdPick()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 9px;color:var(--white);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+      <button class="otd-date-btn" onclick="otdNav(+1)" title="Next">›</button>
+      <input type="date" id="otd-pick" class="otd-date-inp" onchange="otdPick()" title="Anchor date / editing date">
+      <span id="otd-custom-wrap" style="display:none;align-items:center;gap:6px">
+        <input type="date" id="otd-range-start" class="otd-date-inp" onchange="otdCustomRange()">
+        <span style="color:rgba(255,255,255,.7);font-size:12px;font-weight:600">to</span>
+        <input type="date" id="otd-range-end" class="otd-date-inp" onchange="otdCustomRange()">
+      </span>
     </div>
     <button class="btn btn-gold" onclick="otdExport()" style="margin-left:8px">⬇ Export CSV</button>
+  </div>
+  <div class="otd-range-info">
+    <div>Range: <strong id="otd-range-lbl">—</strong></div>
+    <div>Editing data for: <strong id="otd-edit-lbl">—</strong></div>
   </div>
 
   <div class="otd-grid">
@@ -2130,18 +2204,56 @@ textarea.form-input{min-height:80px;resize:vertical}
     <div style="overflow-x:auto">
       <table class="otd-summary-table">
         <thead><tr>
-          <th>Operation</th><th>Planned</th><th>Actual</th><th>Late</th><th>Remakes</th><th>OTD %</th><th style="min-width:100px">Progress</th><th>Supervisor</th><th>Notes</th>
+          <th>Operation</th><th>Metric Owner</th><th>Planned</th><th>Actual</th><th>Late</th><th>Remakes</th><th>OTD %</th><th style="min-width:100px">Progress</th><th>Reason for Miss</th><th>Action</th>
         </tr></thead>
         <tbody id="otd-tbl"></tbody>
       </table>
     </div>
   </div>
 
+  <div class="otd-heatmap-card" id="otd-heatmap-card">
+    <div class="otd-heatmap-hd">
+      <div>🔥 Area Performance Heat Map</div>
+      <div class="otd-heatmap-legend">
+        <span><span class="swatch" style="background:#16a34a"></span>≥95%</span>
+        <span><span class="swatch" style="background:#d97706"></span>80–94%</span>
+        <span><span class="swatch" style="background:#dc2626"></span>&lt;80%</span>
+        <span><span class="swatch" style="background:#eef2f7;border:1px solid #d8dde4"></span>No data</span>
+      </div>
+    </div>
+    <div class="otd-heatmap-wrap" id="otd-heatmap-wrap"></div>
+  </div>
+
   <div style="font-size:15px;font-weight:700;color:var(--spectrum-blue);margin-bottom:12px;display:flex;align-items:center;gap:8px">
     <div style="width:4px;height:18px;background:var(--killian-blue);border-radius:2px"></div>
-    Enter / Update by Operation
+    Enter / Update by Operation <span style="font-size:12px;font-weight:500;color:var(--muted);margin-left:6px">— editing <span id="otd-edit-lbl-2">today</span></span>
   </div>
   <div class="otd-op-grid" id="otd-cards"></div>
+</div>
+
+
+<!-- METRIC OWNERS VIEW -->
+<div class="view" id="view-mowners">
+  <div class="otd-hero" style="margin-bottom:20px">
+    <div><div class="otd-hero-title">AoX Operations</div><div class="otd-hero-name">👥 Metric Owners</div></div>
+  </div>
+  <div class="mowner-card">
+    <div class="mowner-hd">📌 Static Metric Owner Assignments</div>
+    <div class="mowner-sub">Assign a Metric Owner to each operation. These names auto-populate the operation cards and Daily Summary, and stay in place day-to-day until you change them here.</div>
+    <div style="overflow-x:auto">
+      <table class="mowner-tbl">
+        <thead><tr>
+          <th style="min-width:240px">Operation</th>
+          <th style="min-width:240px">Metric Owner</th>
+        </tr></thead>
+        <tbody id="mowner-tbl"></tbody>
+      </table>
+    </div>
+    <div class="mowner-actions">
+      <button class="btn btn-secondary" onclick="mownersClear()">Clear All</button>
+      <button class="btn btn-primary" onclick="mownersSave()">💾 Save Assignments</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2233,6 +2345,7 @@ function setTab(name, el){
   if(name==='wins' && !winsInited){ winsInited=true; initWins(); }
   else if(name==='wins') { loadWinPlan(); }
   if(name==='otd') initOTD();
+  if(name==='mowners') initMOwners();
   if(window._mobileTabHook) window._mobileTabHook();
 }
 
@@ -3094,44 +3207,193 @@ window.addEventListener('load', updateMobileFab);
 
 /* ══ OTD TRACKER ══ */
 const OTD_OPS = ["DBTH - Case Entry", "DBTH - Case Review", "Place Parts", "Design Outsource", "Design QC", "Design Changes", "Design Bar", "Milling CAM - Bar", "Milling CAM - Arches", "Sintering", "Shape and Colorize", "Bar Cementing", "Finishing PMMA", "Finishing Zirc", "Final QC", "Case Coordination"];
-let otdDate = new Date().toISOString().split('T')[0];
-let otdRows = {};
-let otdInited = false;
+const OTD_MOWNERS_KEY = 'aox_metric_owners_v1';
 
+let otdDate       = new Date().toISOString().split('T')[0];   // anchor / edit date
+let otdRangeType  = 'day';                                    // day|week|month|quarter|year|custom
+let otdRangeStart = otdDate;
+let otdRangeEnd   = otdDate;
+let otdEntries    = [];   // all entries within range
+let otdRows       = {};   // entries for otdDate, keyed by operation
+let otdInited     = false;
+
+/* ---------- helpers ---------- */
 function otdFmt(d) {
   return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
+function otdFmtShort(d) {
+  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
 function otdSlug(op) { return op.replace(/[^a-zA-Z0-9]/g,'_'); }
+function otdToYMD(d) { return d.toISOString().split('T')[0]; }
+function otdParseYMD(s) { return new Date(s+'T12:00:00'); }
+function otdDaysBetween(a,b) {
+  const ms = otdParseYMD(b) - otdParseYMD(a);
+  return Math.round(ms/86400000) + 1;
+}
+function otdEnumerateDays(start,end) {
+  const out=[]; let d=otdParseYMD(start), e=otdParseYMD(end);
+  while (d <= e) { out.push(otdToYMD(d)); d.setDate(d.getDate()+1); }
+  return out;
+}
 
+/* metric owner persistence (localStorage so they stay static across sessions) */
+function mownersGetAll() {
+  try { return JSON.parse(localStorage.getItem(OTD_MOWNERS_KEY)) || {}; } catch(e) { return {}; }
+}
+function mownersSet(map) { localStorage.setItem(OTD_MOWNERS_KEY, JSON.stringify(map)); }
+function mownersGet(op) {
+  const m = mownersGetAll();
+  // fall back to most recent supervisor entry from DB if no static set
+  if (m[op]) return m[op];
+  return '';
+}
+
+/* notes are JSON-encoded as {"reason":"...","action":"..."} for new entries.
+   Legacy plain-string notes are treated as the reason. */
+function otdParseNotes(raw) {
+  if (!raw) return { reason:'', action:'' };
+  const s = String(raw).trim();
+  if (s.startsWith('{')) {
+    try {
+      const o = JSON.parse(s);
+      return { reason: o.reason || '', action: o.action || '' };
+    } catch(e) {}
+  }
+  return { reason: s, action: '' };
+}
+function otdEncodeNotes(reason, action) {
+  reason = (reason||'').trim();
+  action = (action||'').trim();
+  if (!reason && !action) return null;
+  return JSON.stringify({ reason, action });
+}
+
+/* ---------- range computation ---------- */
+function otdComputeRange() {
+  const d = otdParseYMD(otdDate);
+  if (otdRangeType === 'day') {
+    otdRangeStart = otdRangeEnd = otdDate;
+  } else if (otdRangeType === 'week') {
+    // ISO-ish week: Monday → Sunday containing otdDate
+    const wd = (d.getDay() + 6) % 7;  // 0=Mon … 6=Sun
+    const s = new Date(d); s.setDate(d.getDate() - wd);
+    const e = new Date(s); e.setDate(s.getDate() + 6);
+    otdRangeStart = otdToYMD(s); otdRangeEnd = otdToYMD(e);
+  } else if (otdRangeType === 'month') {
+    const s = new Date(d.getFullYear(), d.getMonth(), 1);
+    const e = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    otdRangeStart = otdToYMD(s); otdRangeEnd = otdToYMD(e);
+  } else if (otdRangeType === 'quarter') {
+    const q = Math.floor(d.getMonth()/3);
+    const s = new Date(d.getFullYear(), q*3, 1);
+    const e = new Date(d.getFullYear(), q*3+3, 0);
+    otdRangeStart = otdToYMD(s); otdRangeEnd = otdToYMD(e);
+  } else if (otdRangeType === 'year') {
+    otdRangeStart = otdToYMD(new Date(d.getFullYear(),0,1));
+    otdRangeEnd   = otdToYMD(new Date(d.getFullYear(),11,31));
+  } else if (otdRangeType === 'custom') {
+    // start/end are set by otdCustomRange() — just sanity check
+    if (!otdRangeStart) otdRangeStart = otdDate;
+    if (!otdRangeEnd)   otdRangeEnd   = otdDate;
+    if (otdRangeStart > otdRangeEnd) [otdRangeStart, otdRangeEnd] = [otdRangeEnd, otdRangeStart];
+  }
+}
+
+function otdRangeLabel() {
+  if (otdRangeType === 'day' || otdRangeStart === otdRangeEnd) return otdFmtShort(otdRangeStart);
+  return otdFmtShort(otdRangeStart) + ' → ' + otdFmtShort(otdRangeEnd);
+}
+
+/* ---------- init / nav ---------- */
 async function initOTD() {
   if (!otdInited) { otdInited = true; buildOTDCards(); }
   document.getElementById('otd-pick').value = otdDate;
-  document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
+  document.getElementById('otd-range-type').value = otdRangeType;
+  otdComputeRange();
+  otdSyncRangeUI();
   await loadOTD();
 }
 
-function otdNav(delta) {
-  const d = new Date(otdDate+'T12:00:00'); d.setDate(d.getDate()+delta);
-  otdDate = d.toISOString().split('T')[0];
-  document.getElementById('otd-pick').value = otdDate;
+function otdSyncRangeUI() {
   document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
-  loadOTD();
+  const rl = document.getElementById('otd-range-lbl');
+  if (rl) rl.textContent = otdRangeLabel();
+  const el = document.getElementById('otd-edit-lbl');
+  if (el) el.textContent = otdFmtShort(otdDate);
+  const el2 = document.getElementById('otd-edit-lbl-2');
+  if (el2) el2.textContent = otdFmtShort(otdDate);
+  const wrap = document.getElementById('otd-custom-wrap');
+  if (wrap) wrap.style.display = otdRangeType === 'custom' ? 'inline-flex' : 'none';
+  if (otdRangeType === 'custom') {
+    document.getElementById('otd-range-start').value = otdRangeStart;
+    document.getElementById('otd-range-end').value   = otdRangeEnd;
+  }
 }
-function otdPick() {
-  otdDate = document.getElementById('otd-pick').value;
-  document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
+
+function otdSetRangeType() {
+  otdRangeType = document.getElementById('otd-range-type').value;
+  if (otdRangeType === 'custom') {
+    if (!otdRangeStart) otdRangeStart = otdDate;
+    if (!otdRangeEnd)   otdRangeEnd   = otdDate;
+  }
+  otdComputeRange();
+  otdSyncRangeUI();
   loadOTD();
 }
 
+function otdNav(delta) {
+  const d = otdParseYMD(otdDate);
+  if (otdRangeType === 'day' || otdRangeType === 'custom') {
+    d.setDate(d.getDate()+delta);
+  } else if (otdRangeType === 'week') {
+    d.setDate(d.getDate()+7*delta);
+  } else if (otdRangeType === 'month') {
+    d.setMonth(d.getMonth()+delta);
+  } else if (otdRangeType === 'quarter') {
+    d.setMonth(d.getMonth()+3*delta);
+  } else if (otdRangeType === 'year') {
+    d.setFullYear(d.getFullYear()+delta);
+  }
+  otdDate = otdToYMD(d);
+  document.getElementById('otd-pick').value = otdDate;
+  if (otdRangeType !== 'custom') otdComputeRange();
+  otdSyncRangeUI();
+  loadOTD();
+}
+
+function otdPick() {
+  otdDate = document.getElementById('otd-pick').value || otdDate;
+  if (otdRangeType !== 'custom') otdComputeRange();
+  otdSyncRangeUI();
+  loadOTD();
+}
+
+function otdCustomRange() {
+  const s = document.getElementById('otd-range-start').value;
+  const e = document.getElementById('otd-range-end').value;
+  if (s) otdRangeStart = s;
+  if (e) otdRangeEnd   = e;
+  if (otdRangeStart > otdRangeEnd) [otdRangeStart, otdRangeEnd] = [otdRangeEnd, otdRangeStart];
+  otdSyncRangeUI();
+  loadOTD();
+}
+
+/* ---------- data load ---------- */
 async function loadOTD() {
   try {
-    const data = await sbFetch('otd_entries?entry_date=eq.'+otdDate+'&order=operation');
+    const data = await sbFetch(`otd_entries?entry_date=gte.${otdRangeStart}&entry_date=lte.${otdRangeEnd}&order=entry_date,operation`);
+    otdEntries = data;
     otdRows = {};
-    data.forEach(r => otdRows[r.operation] = r);
-    fillCards(); renderOTDTable(); updateOTDKPIs();
+    data.filter(r => r.entry_date === otdDate).forEach(r => otdRows[r.operation] = r);
+    fillCards();
+    renderOTDTable();
+    updateOTDKPIs();
+    renderHeatmap();
   } catch(e) { console.error('OTD load',e); }
 }
 
+/* ---------- operation cards ---------- */
 function buildOTDCards() {
   const g = document.getElementById('otd-cards');
   if (!g) return;
@@ -3144,8 +3406,8 @@ function buildOTDCards() {
       </div>
       <div class="otd-card-body">
         <div class="otd-field">
-          <div class="otd-flbl">Supervisor</div>
-          <input class="otd-inp" id="otd-sup-${s}" type="text" placeholder="Name…">
+          <div class="otd-flbl">Metric Owner</div>
+          <input class="otd-inp ro-static" id="otd-sup-${s}" type="text" placeholder="Set in Metric Owners tab" readonly>
         </div>
         <div class="otd-field">
           <div class="otd-flbl">Units Planned</div>
@@ -3168,8 +3430,12 @@ function buildOTDCards() {
           <input class="otd-inp ro" id="otd-pct-${s}" type="text" readonly value="—">
         </div>
         <div class="otd-field full">
-          <div class="otd-flbl">Notes / Reason for Miss</div>
-          <input class="otd-inp" id="otd-nts-${s}" type="text" placeholder="Context…">
+          <div class="otd-flbl">Reason for Miss <span class="otd-req-tag" id="otd-rsn-tag-${s}" style="display:none">REQUIRED</span></div>
+          <input class="otd-inp" id="otd-rsn-${s}" type="text" placeholder="Why was the target missed?">
+        </div>
+        <div class="otd-field full">
+          <div class="otd-flbl">Action to Address <span class="otd-req-tag" id="otd-act-tag-${s}" style="display:none">REQUIRED</span></div>
+          <input class="otd-inp" id="otd-actn-${s}" type="text" placeholder="Action to prevent recurrence…">
         </div>
       </div>
       <div class="otd-card-ft">
@@ -3180,15 +3446,23 @@ function buildOTDCards() {
 }
 
 function fillCards() {
+  const owners = mownersGetAll();
   OTD_OPS.forEach(op => {
     const s = otdSlug(op), d = otdRows[op] || {};
     const g = id => document.getElementById(id);
-    if(g(`otd-sup-${s}`)) g(`otd-sup-${s}`).value = d.supervisor || '';
-    if(g(`otd-pln-${s}`)) g(`otd-pln-${s}`).value = d.units_planned ?? '';
-    if(g(`otd-act-${s}`)) g(`otd-act-${s}`).value = d.units_actual ?? '';
-    if(g(`otd-lat-${s}`)) g(`otd-lat-${s}`).value = d.late_count ?? '';
-    if(g(`otd-rmk-${s}`)) g(`otd-rmk-${s}`).value = d.remake_count ?? '';
-    if(g(`otd-nts-${s}`)) g(`otd-nts-${s}`).value = d.notes || '';
+    // Metric Owner: prefer static assignment, fall back to whatever was last saved on the row
+    const owner = owners[op] || d.supervisor || '';
+    if (g(`otd-sup-${s}`))  g(`otd-sup-${s}`).value = owner;
+    if (g(`otd-pln-${s}`))  g(`otd-pln-${s}`).value = d.units_planned ?? '';
+    if (g(`otd-act-${s}`))  g(`otd-act-${s}`).value = d.units_actual ?? '';
+    if (g(`otd-lat-${s}`))  g(`otd-lat-${s}`).value = d.late_count ?? '';
+    if (g(`otd-rmk-${s}`))  g(`otd-rmk-${s}`).value = d.remake_count ?? '';
+    const parsed = otdParseNotes(d.notes);
+    if (g(`otd-rsn-${s}`))  g(`otd-rsn-${s}`).value = parsed.reason;
+    if (g(`otd-actn-${s}`)) g(`otd-actn-${s}`).value = parsed.action;
+    // clear required-error state
+    [`otd-rsn-${s}`, `otd-actn-${s}`].forEach(id => g(id)?.classList.remove('req-empty'));
+    [`otd-rsn-tag-${s}`, `otd-act-tag-${s}`].forEach(id => { const t=g(id); if(t) t.style.display='none'; });
     otdCalc(s);
   });
 }
@@ -3202,23 +3476,61 @@ function otdCalc(s) {
   const pctEl = document.getElementById(`otd-pct-${s}`);
   const pillEl = document.getElementById(`otd-p-${s}`);
   if (!pctEl || !pillEl) return;
-  if (pct === null) { pctEl.value = '—'; pillEl.textContent = '—'; pillEl.className = 'otd-pill empty'; return; }
-  pctEl.value = pct + '%';
-  pillEl.textContent = pct + '%';
-  pillEl.className = 'otd-pill' + (pct >= 95 ? '' : pct >= 80 ? ' warn' : ' danger');
+  if (pct === null) { pctEl.value = '—'; pillEl.textContent = '—'; pillEl.className = 'otd-pill empty'; }
+  else {
+    pctEl.value = pct + '%';
+    pillEl.textContent = pct + '%';
+    pillEl.className = 'otd-pill' + (pct >= 95 ? '' : pct >= 80 ? ' warn' : ' danger');
+  }
+  // update REQUIRED indicators based on miss state
+  const isMiss = (lat > 0) || (pct !== null && pct < 95);
+  const tagR = document.getElementById(`otd-rsn-tag-${s}`);
+  const tagA = document.getElementById(`otd-act-tag-${s}`);
+  if (tagR) tagR.style.display = isMiss ? 'inline' : 'none';
+  if (tagA) tagA.style.display = isMiss ? 'inline' : 'none';
 }
 
 async function saveOTD(op) {
   const s = otdSlug(op);
   const g = id => document.getElementById(id);
+  const pln = parseInt(g(`otd-pln-${s}`)?.value);
+  const act = parseInt(g(`otd-act-${s}`)?.value);
+  const lat = parseInt(g(`otd-lat-${s}`)?.value) || 0;
+  const reason = g(`otd-rsn-${s}`)?.value.trim() || '';
+  const action = g(`otd-actn-${s}`)?.value.trim() || '';
+
+  // detect miss → mandatory reason + action
+  let pct = null;
+  if (pln > 0) pct = Math.max(0, Math.round((pln - lat) / pln * 100));
+  else if (act > 0) pct = Math.max(0, Math.round((act - lat) / act * 100));
+  const isMiss = (lat > 0) || (pct !== null && pct < 95);
+
+  const rsnEl = g(`otd-rsn-${s}`);
+  const actEl = g(`otd-actn-${s}`);
+  rsnEl?.classList.remove('req-empty');
+  actEl?.classList.remove('req-empty');
+
+  if (isMiss) {
+    let bad = false;
+    if (!reason) { rsnEl?.classList.add('req-empty'); bad = true; }
+    if (!action) { actEl?.classList.add('req-empty'); bad = true; }
+    if (bad) {
+      alert('A miss was recorded. "Reason for Miss" and "Action to Address" are both required before saving.');
+      (reason ? actEl : rsnEl)?.focus();
+      return;
+    }
+  }
+
+  const owner = mownersGet(op) || g(`otd-sup-${s}`)?.value.trim() || null;
+
   const payload = {
     entry_date: otdDate, operation: op,
-    supervisor: g(`otd-sup-${s}`)?.value.trim() || null,
-    units_planned: parseInt(g(`otd-pln-${s}`)?.value) || null,
-    units_actual:  parseInt(g(`otd-act-${s}`)?.value) || null,
-    late_count:    parseInt(g(`otd-lat-${s}`)?.value) || 0,
+    supervisor: owner,
+    units_planned: isNaN(pln) ? null : pln,
+    units_actual:  isNaN(act) ? null : act,
+    late_count:    lat,
     remake_count:  parseInt(g(`otd-rmk-${s}`)?.value) || 0,
-    notes: g(`otd-nts-${s}`)?.value.trim() || null,
+    notes: otdEncodeNotes(reason, action),
     updated_at: new Date().toISOString()
   };
   try {
@@ -3231,38 +3543,67 @@ async function saveOTD(op) {
   } catch(e) { alert('Error: '+e.message); }
 }
 
+/* ---------- daily summary table (aggregates over selected range) ---------- */
 function renderOTDTable() {
   const tb = document.getElementById('otd-tbl');
   if (!tb) return;
+  const owners = mownersGetAll();
+  // aggregate over otdEntries by operation
+  const agg = {};
+  OTD_OPS.forEach(op => agg[op] = { planned:0, actual:0, late:0, remakes:0, count:0, supervisor:'', latestNotes:'' });
+  otdEntries.forEach(r => {
+    const a = agg[r.operation]; if (!a) return;
+    a.planned += r.units_planned || 0;
+    a.actual  += r.units_actual  || 0;
+    a.late    += r.late_count    || 0;
+    a.remakes += r.remake_count  || 0;
+    a.count++;
+    if (r.supervisor) a.supervisor = r.supervisor;
+    if (r.notes) a.latestNotes = r.notes;
+  });
+
   tb.innerHTML = OTD_OPS.map(op => {
-    const d = otdRows[op] || {};
-    const pln = d.units_planned || null, act = d.units_actual || null;
-    const lat = d.late_count || 0, rmk = d.remake_count || 0;
+    const a = agg[op];
+    const owner = owners[op] || a.supervisor || '—';
+    const pln = a.planned || null, act = a.actual || null;
     let pct = null;
-    if (pln > 0) pct = Math.max(0, Math.round((pln - lat) / pln * 100));
-    else if (act > 0) pct = Math.max(0, Math.round((act - lat) / act * 100));
+    if (pln > 0) pct = Math.max(0, Math.round((pln - a.late) / pln * 100));
+    else if (act > 0) pct = Math.max(0, Math.round((act - a.late) / act * 100));
     const c = pct === null ? '#aaa' : pct >= 95 ? '#16a34a' : pct >= 80 ? '#d97706' : '#dc2626';
+    const parsed = otdParseNotes(a.latestNotes);
     return `<tr>
       <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(op)}</td>
+      <td style="font-size:13px;font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(owner)}</td>
       <td style="text-align:center">${pln ?? '—'}</td>
       <td style="text-align:center">${act ?? '—'}</td>
-      <td style="text-align:center;color:${lat>0?'#dc2626':'var(--muted)'};font-weight:${lat>0?700:400}">${lat}</td>
-      <td style="text-align:center;color:${rmk>0?'#d97706':'var(--muted)'}">${rmk}</td>
+      <td style="text-align:center;color:${a.late>0?'#dc2626':'var(--muted)'};font-weight:${a.late>0?700:400}">${a.late}</td>
+      <td style="text-align:center;color:${a.remakes>0?'#d97706':'var(--muted)'}">${a.remakes}</td>
       <td style="font-weight:800;color:${c}">${pct!==null?pct+'%':'—'}</td>
       <td><div class="otd-bar-wrap"><div class="otd-bar-fill" style="width:${pct??0}%;background:${c}"></div></div></td>
-      <td style="font-size:12px">${esc(d.supervisor||'—')}</td>
-      <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:150px">${esc(d.notes||'')}</td>
+      <td style="font-size:12px;color:var(--muted);font-style:italic;max-width:180px">${esc(parsed.reason||'—')}</td>
+      <td style="font-size:12px;color:var(--muted);font-style:italic;max-width:180px">${esc(parsed.action||'—')}</td>
     </tr>`;
   }).join('');
 }
 
+/* ---------- KPIs (over selected range) ---------- */
 function updateOTDKPIs() {
-  const all = Object.values(otdRows);
-  const totalLate = all.reduce((s,e)=>s+(e.late_count||0),0);
-  const totalRmk  = all.reduce((s,e)=>s+(e.remake_count||0),0);
-  const pcts = all.filter(e=>(e.units_planned||0)>0||(e.units_actual||0)>0).map(e => {
-    const p=e.units_planned||0, l=e.late_count||0, a=e.units_actual||0;
-    return p>0 ? Math.max(0,(p-l)/p*100) : Math.max(0,(a-l)/a*100);
+  const totalLate = otdEntries.reduce((s,e)=>s+(e.late_count||0),0);
+  const totalRmk  = otdEntries.reduce((s,e)=>s+(e.remake_count||0),0);
+  // per-op aggregate OTD%
+  const agg = {};
+  OTD_OPS.forEach(op => agg[op] = { planned:0, actual:0, late:0 });
+  otdEntries.forEach(r => {
+    const a = agg[r.operation]; if (!a) return;
+    a.planned += r.units_planned || 0;
+    a.actual  += r.units_actual  || 0;
+    a.late    += r.late_count    || 0;
+  });
+  const pcts = [];
+  OTD_OPS.forEach(op => {
+    const a = agg[op];
+    if (a.planned>0) pcts.push(Math.max(0,(a.planned-a.late)/a.planned*100));
+    else if (a.actual>0) pcts.push(Math.max(0,(a.actual-a.late)/a.actual*100));
   });
   const avg = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : null;
   const onTime = pcts.filter(p=>p>=95).length;
@@ -3271,21 +3612,186 @@ function updateOTDKPIs() {
   if(g('otd-k-on'))  g('otd-k-on').textContent  = pcts.length ? onTime : '—';
   if(g('otd-k-late'))g('otd-k-late').textContent = totalLate;
   if(g('otd-k-rmk')) g('otd-k-rmk').textContent = totalRmk;
+  // KPI labels
+  const remLbl = document.querySelector('.otd-grid .otd-kpi.gold .otd-klbl');
+  if (remLbl) remLbl.textContent = otdRangeType==='day' ? 'Remakes Today' : 'Remakes (range)';
   const bdg = document.getElementById('otd-badge');
   if (bdg) bdg.textContent = pcts.length || '—';
 }
 
-function otdExport() {
-  const rows = [['Date','Operation','Supervisor','Planned','Actual','Late','Remakes','OTD%','Notes']];
-  OTD_OPS.forEach(op => {
-    const d = otdRows[op] || {};
-    const p=d.units_planned||0, l=d.late_count||0, a=d.units_actual||0;
-    let pct=''; if(p>0)pct=Math.max(0,Math.round((p-l)/p*100))+'%'; else if(a>0)pct=Math.max(0,Math.round((a-l)/a*100))+'%';
-    rows.push([otdDate,op,d.supervisor||'',d.units_planned||'',d.units_actual||'',l,d.remake_count||0,pct,d.notes||'']);
+/* ---------- heat map ---------- */
+function renderHeatmap() {
+  const card = document.getElementById('otd-heatmap-card');
+  const wrap = document.getElementById('otd-heatmap-wrap');
+  if (!card || !wrap) return;
+
+  // hide for single day
+  if (otdRangeStart === otdRangeEnd) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  // decide bucket strategy
+  const totalDays = otdDaysBetween(otdRangeStart, otdRangeEnd);
+  let buckets = [];
+  if (totalDays <= 35) {
+    // daily
+    otdEnumerateDays(otdRangeStart, otdRangeEnd).forEach(d => {
+      buckets.push({ key:d, label:otdParseYMD(d).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}), days:[d], title: otdFmtShort(d) });
+    });
+  } else if (totalDays <= 184) {
+    // weekly
+    let cur = otdParseYMD(otdRangeStart);
+    const end = otdParseYMD(otdRangeEnd);
+    // align to Monday
+    const wd = (cur.getDay()+6)%7; cur.setDate(cur.getDate()-wd);
+    while (cur <= end) {
+      const wkStart = new Date(cur);
+      const wkEnd   = new Date(cur); wkEnd.setDate(wkEnd.getDate()+6);
+      const days = [];
+      for (let i=0; i<7; i++) {
+        const d = new Date(wkStart); d.setDate(d.getDate()+i);
+        const ymd = otdToYMD(d);
+        if (ymd >= otdRangeStart && ymd <= otdRangeEnd) days.push(ymd);
+      }
+      if (days.length) {
+        buckets.push({
+          key: otdToYMD(wkStart),
+          label: wkStart.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}),
+          days,
+          title: 'Wk of ' + otdFmtShort(otdToYMD(wkStart))
+        });
+      }
+      cur.setDate(cur.getDate()+7);
+    }
+  } else {
+    // monthly
+    const start = otdParseYMD(otdRangeStart), end = otdParseYMD(otdRangeEnd);
+    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cur <= end) {
+      const monStart = new Date(cur);
+      const monEnd   = new Date(cur.getFullYear(), cur.getMonth()+1, 0);
+      const days = [];
+      const dayCount = monEnd.getDate();
+      for (let i=1; i<=dayCount; i++) {
+        const d = new Date(cur.getFullYear(), cur.getMonth(), i);
+        const ymd = otdToYMD(d);
+        if (ymd >= otdRangeStart && ymd <= otdRangeEnd) days.push(ymd);
+      }
+      if (days.length) {
+        buckets.push({
+          key: otdToYMD(monStart),
+          label: monStart.toLocaleDateString('en-US',{month:'short'}) + (start.getFullYear() !== end.getFullYear() ? " '"+String(monStart.getFullYear()).slice(-2) : ''),
+          days,
+          title: monStart.toLocaleDateString('en-US',{month:'long',year:'numeric'})
+        });
+      }
+      cur.setMonth(cur.getMonth()+1);
+    }
+  }
+
+  if (!buckets.length) {
+    wrap.innerHTML = '<div class="otd-heatmap-empty">No data for the selected range.</div>';
+    return;
+  }
+
+  // build per-op per-bucket OTD%
+  const byOpDate = {};
+  otdEntries.forEach(r => {
+    if (!byOpDate[r.operation]) byOpDate[r.operation] = {};
+    byOpDate[r.operation][r.entry_date] = r;
   });
+
+  const colCount = buckets.length;
+  const gridStyle = `grid-template-columns: 180px repeat(${colCount}, 22px);`;
+
+  // header row
+  const headerCells = `<div></div>` + buckets.map(b =>
+    `<div class="otd-heatmap-col-lbl" title="${esc(b.title)}">${esc(b.label)}</div>`
+  ).join('');
+
+  // op rows
+  const rows = OTD_OPS.map(op => {
+    const cells = buckets.map(b => {
+      let p=0,a=0,l=0,n=0;
+      b.days.forEach(d => {
+        const r = byOpDate[op]?.[d];
+        if (r) { p += r.units_planned||0; a += r.units_actual||0; l += r.late_count||0; n++; }
+      });
+      let pct = null;
+      if (p>0) pct = Math.max(0,Math.round((p-l)/p*100));
+      else if (a>0) pct = Math.max(0,Math.round((a-l)/a*100));
+      let cls = 'empty';
+      if (pct !== null) cls = pct >= 95 ? 'green' : pct >= 80 ? 'amber' : 'red';
+      const title = `${op} · ${b.title}` + (pct!==null ? ` · ${pct}%` : ' · no data');
+      return `<div class="otd-heatmap-cell ${cls}" title="${esc(title)}"></div>`;
+    }).join('');
+    return `<div class="otd-heatmap-row-lbl">${esc(op)}</div>${cells}`;
+  }).join('');
+
+  wrap.innerHTML = `<div class="otd-heatmap-grid" style="${gridStyle}">${headerCells}${rows}</div>`;
+}
+
+/* ---------- export CSV ---------- */
+function otdExport() {
+  const rows = [['Date','Operation','Metric Owner','Planned','Actual','Late','Remakes','OTD%','Reason for Miss','Action']];
+  otdEntries.forEach(r => {
+    const p=r.units_planned||0, l=r.late_count||0, a=r.units_actual||0;
+    let pct=''; if(p>0)pct=Math.max(0,Math.round((p-l)/p*100))+'%'; else if(a>0)pct=Math.max(0,Math.round((a-l)/a*100))+'%';
+    const parsed = otdParseNotes(r.notes);
+    rows.push([r.entry_date, r.operation, r.supervisor||'', r.units_planned||'', r.units_actual||'', l, r.remake_count||0, pct, parsed.reason, parsed.action]);
+  });
+  if (rows.length === 1) {
+    // fallback: emit per-op blanks for current entry date
+    OTD_OPS.forEach(op => rows.push([otdDate,op,mownersGet(op)||'','','',0,0,'','','']));
+  }
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='OTD_'+otdDate+'.csv'; a.click(); toast('CSV exported ✓');
+  a.download='OTD_'+otdRangeStart+'_'+otdRangeEnd+'.csv'; a.click(); toast('CSV exported ✓');
+}
+
+/* ══ METRIC OWNERS TAB ══ */
+let mownersInited = false;
+function initMOwners() {
+  buildMOwnersTable();
+  mownersInited = true;
+}
+function buildMOwnersTable() {
+  const tb = document.getElementById('mowner-tbl');
+  if (!tb) return;
+  const owners = mownersGetAll();
+  tb.innerHTML = OTD_OPS.map(op => {
+    const s = otdSlug(op);
+    const v = (owners[op] || '').replace(/"/g,'&quot;');
+    return `<tr>
+      <td style="font-weight:600;color:var(--spectrum-blue)">${esc(op)}</td>
+      <td><input id="mown-${s}" type="text" value="${v}" placeholder="e.g. Jane Smith"></td>
+    </tr>`;
+  }).join('');
+}
+function mownersSave() {
+  const map = {};
+  OTD_OPS.forEach(op => {
+    const s = otdSlug(op);
+    const el = document.getElementById(`mown-${s}`);
+    const v = el?.value.trim();
+    if (v) map[op] = v;
+  });
+  mownersSet(map);
+  toast('Metric Owners saved');
+  // refresh OTD view if it's already initialized
+  if (otdInited) {
+    fillCards();
+    renderOTDTable();
+  }
+}
+function mownersClear() {
+  if (!confirm('Clear all Metric Owner assignments?')) return;
+  mownersSet({});
+  buildMOwnersTable();
+  if (otdInited) { fillCards(); renderOTDTable(); }
+  toast('Cleared');
 }
 
 
