@@ -1,0 +1,3296 @@
+<!DOCTYPE html>
+<!-- saved from url=(0096)file:///C:/Users/AdrianaPosadas/Downloads/AoX%20RAID%20Log%20%E2%80%94%20Spectrum%20Killian.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AoX Ops">
+<meta name="theme-color" content="#052030">
+<link rel="manifest" href="file:///C:/Users/AdrianaPosadas/Downloads/manifest.json">
+<link rel="apple-touch-icon" href="file:///C:/Users/AdrianaPosadas/Downloads/icons/apple-touch-icon.png">
+<title>AoX RAID Log — Spectrum Killian</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
+
+/* ── BRAND TOKENS ── */
+:root {
+  --spectrum-blue: #052030;
+  --killian-blue:  #1882C7;
+  --dental-blue:   #4ABEEE;
+  --lab-gold:      #B3A369;
+  --alliance-blue: #C3E8FA;
+  --silver:        #B0B7C3;
+  --white:         #ffffff;
+  --off-white:     #f4f7fb;
+  --border:        #dbe4ef;
+  --text:          #052030;
+  --muted:         #5a7089;
+  --shadow:        0 2px 8px rgba(5,32,48,.10);
+  --shadow-lg:     0 8px 32px rgba(5,32,48,.16);
+  --r:             8px;
+
+  /* type colours */
+  --risk-bg: #fff0f0; --risk-c: #b91c1c; --risk-bd: #fecaca;
+  --action-bg: #fffbeb; --action-c: #92400e; --action-bd: #fde68a;
+  --issue-bg: #eff6ff; --issue-c: #1d4ed8; --issue-bd: #bfdbfe;
+  --decision-bg: #f0fdf4; --decision-c: #166534; --decision-bd: #bbf7d0;
+
+  /* priority */
+  --crit-bg: #fef2f2; --crit-c: #dc2626;
+  --high-bg: #fff7ed; --high-c: #c2410c;
+  --med-bg: #fefce8; --med-c: #a16207;
+  --low-bg: #f0fdf4; --low-c: #16a34a;
+
+  /* status */
+  --open-bg:#eff6ff; --open-c:#1d4ed8;
+  --inprog-bg:#faf5ff; --inprog-c:#7c3aed;
+  --closed-bg:#f0fdf4; --closed-c:#166534;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white);color:var(--text);font-size:14px}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--spectrum-blue);
+  padding:0 28px;
+  height:60px;
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:300;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
+}
+/* SVG logo mark */
+.logo-mark svg{width:36px;height:36px}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-text .brand{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--white);letter-spacing:.04em}
+.logo-text .sub{font-size:10px;color:var(--dental-blue);font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.topbar-divider{width:1px;height:32px;background:rgba(255,255,255,.15);margin:0 8px}
+.topbar-title{font-size:15px;font-weight:600;color:var(--white);flex:1}
+.topbar-date{font-size:11px;color:var(--silver);letter-spacing:.04em}
+
+/* ── NAV TABS ── */
+.nav-tabs{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;gap:0;
+  position:sticky;top:60px;z-index:200;
+}
+.nav-tab{
+  font-size:13px;font-weight:600;
+  padding:14px 20px;
+  color:var(--muted);
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  margin-bottom:-1px;
+  letter-spacing:.02em;
+  transition:all .15s;
+  display:flex;align-items:center;gap:7px;
+}
+.nav-tab:hover{color:var(--killian-blue)}
+.nav-tab.active{color:var(--killian-blue);border-bottom-color:var(--killian-blue)}
+.nav-tab .count{background:var(--alliance-blue);color:var(--killian-blue);font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px}
+
+/* ── VIEWS ── */
+.view{display:none;padding:24px 28px}
+.view.active{display:block}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.kpi{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;box-shadow:var(--shadow);
+  border-top:3px solid var(--killian-blue);
+}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:800;color:var(--spectrum-blue);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi.gold{border-top-color:var(--lab-gold)}
+.kpi.red{border-top-color:#dc2626}
+.kpi.green{border-top-color:#16a34a}
+.kpi.purple{border-top-color:#7c3aed}
+
+/* ── CONTROLS ── */
+.controls{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 16px;margin-bottom:16px;
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  box-shadow:var(--shadow);
+}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+.ctrl-group label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+select,input[type=text],input[type=date]{
+  border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-family:inherit;font-size:13px;
+  color:var(--text);background:var(--white);
+}
+select:focus,input:focus{outline:2px solid var(--killian-blue);border-color:transparent}
+.btn{
+  border:none;border-radius:6px;padding:7px 16px;
+  font-family:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.btn-primary{background:var(--killian-blue);color:var(--white)}
+.btn-primary:hover{background:#1470ac}
+.btn-gold{background:var(--lab-gold);color:var(--white)}
+.btn-gold:hover{background:#9a8b58}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--killian-blue);color:var(--killian-blue)}
+.search-wrap{flex:1;min-width:200px}
+.search-input{width:100%;padding-left:32px;background:var(--off-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%235a7089' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 10px center}
+
+/* ── RAID TABLE ── */
+.table-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:auto;max-height:calc(100vh - 220px)}
+.table-wrap .raid-table th{position:sticky;top:0;z-index:10}
+.raid-table{width:100%;border-collapse:collapse;font-size:13px}
+.raid-table th{
+  background:var(--spectrum-blue);color:var(--white);
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding:10px 12px;text-align:left;white-space:nowrap;
+  cursor:pointer;user-select:none;
+}
+.raid-table th:hover{background:#0a3352}
+.raid-table th .sort-icon{opacity:.5;margin-left:4px}
+.raid-table td{padding:10px 12px;border-bottom:1px solid #f0f4f8;vertical-align:top;line-height:1.4}
+.raid-table tr:last-child td{border-bottom:none}
+.raid-table tr:hover td{background:#f8fbff}
+.issue-text{font-weight:500;color:var(--spectrum-blue);max-width:260px}
+.mitigation-text{color:var(--muted);font-size:12px;max-width:200px}
+.notes-text{color:var(--muted);font-size:11px;max-width:160px;font-style:italic}
+
+/* ── BADGES ── */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.02em}
+.badge-risk{background:var(--risk-bg);color:var(--risk-c);border:1px solid var(--risk-bd)}
+.badge-action{background:var(--action-bg);color:var(--action-c);border:1px solid var(--action-bd)}
+.badge-issue{background:var(--issue-bg);color:var(--issue-c);border:1px solid var(--issue-bd)}
+.badge-decision{background:var(--decision-bg);color:var(--decision-c);border:1px solid var(--decision-bd)}
+.badge-critical{background:var(--crit-bg);color:var(--crit-c)}
+.badge-high{background:var(--high-bg);color:var(--high-c)}
+.badge-medium{background:var(--med-bg);color:var(--med-c)}
+.badge-low{background:var(--low-bg);color:var(--low-c)}
+.badge-open{background:var(--open-bg);color:var(--open-c)}
+.badge-inprogress{background:var(--inprog-bg);color:var(--inprog-c)}
+.badge-closed{background:var(--closed-bg);color:var(--closed-c)}
+.badge-sev-high{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.badge-sev-medium{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.badge-sev-low{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+
+/* Impact/Effort dots */
+.ie-dots{display:flex;gap:3px}
+.dot{width:10px;height:10px;border-radius:50%;background:#e2e8f0}
+.dot.on{background:var(--killian-blue)}
+.dot.on.hi{background:#dc2626}
+
+/* Action buttons */
+.row-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.raid-table tr:hover .row-actions{opacity:1}
+.act-btn{background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;color:var(--muted)}
+.act-btn:hover{border-color:var(--killian-blue);color:var(--killian-blue)}
+.act-btn.close{border-color:#16a34a;color:#16a34a}
+.act-btn.close:hover{background:#f0fdf4}
+.act-btn.del{border-color:#dc2626;color:#dc2626}
+.act-btn.del:hover{background:#fef2f2}
+
+/* ── MATRIX VIEW ── */
+.matrix-container{display:flex;gap:20px}
+.matrix-wrap{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;position:relative}
+.matrix-title{font-size:14px;font-weight:700;color:var(--spectrum-blue);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.matrix-grid{
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:10px;height:480px;
+  position:relative;
+}
+.quadrant{
+  border-radius:8px;padding:12px;overflow-y:auto;
+  position:relative;
+}
+.q-quick-wins{background:#f0fdf4;border:2px solid #bbf7d0}
+.q-major{background:#fef2f2;border:2px solid #fecaca}
+.q-fill-ins{background:#f0f9ff;border:2px solid #bae6fd}
+.q-thankless{background:#fefce8;border:2px solid #fde68a}
+.q-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.q-quick-wins .q-label{color:#166534}
+.q-major .q-label{color:#991b1b}
+.q-fill-ins .q-label{color:#0369a1}
+.q-thankless .q-label{color:#854d0e}
+.q-desc{font-size:10px;color:var(--muted);margin-bottom:8px}
+.matrix-item{
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;margin-bottom:6px;cursor:pointer;
+  transition:box-shadow .15s;font-size:12px;
+}
+.matrix-item:hover{box-shadow:0 2px 8px rgba(5,32,48,.12);border-color:var(--killian-blue)}
+.matrix-item-issue{font-weight:600;color:var(--spectrum-blue);line-height:1.3;margin-bottom:4px}
+.matrix-item-meta{display:flex;gap:4px;flex-wrap:wrap}
+.matrix-axes{position:absolute;pointer-events:none}
+.axis-label-x{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.axis-label-y{position:absolute;left:-22px;top:50%;transform:translateY(-50%) rotate(-90deg);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.axis-arrow{font-size:16px}
+
+/* ── DASHBOARD VIEW ── */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  font-size:13px;font-weight:700;color:var(--spectrum-blue);
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#f8fbff 0%,var(--white) 100%);
+}
+.card-head .accent{width:4px;height:18px;border-radius:2px;background:var(--killian-blue)}
+.card-body{padding:16px 18px}
+
+/* Bar charts */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;width:80px;flex-shrink:0;font-weight:500;color:var(--spectrum-blue)}
+.bar-track{flex:1;height:10px;background:#f0f4f8;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width .5s;background:var(--killian-blue)}
+.bar-val{font-size:11px;font-weight:700;color:var(--muted);width:28px;text-align:right}
+
+/* Weekly closed list */
+.closed-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 0;border-bottom:1px solid #f0f4f8;
+}
+.closed-item:last-child{border-bottom:none}
+.closed-check{width:22px;height:22px;border-radius:50%;background:#dcfce7;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#16a34a;margin-top:1px}
+.closed-info{}
+.closed-issue{font-size:13px;font-weight:600;color:var(--spectrum-blue);line-height:1.3}
+.closed-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* Progress ring */
+.ring-row{display:flex;align-items:center;justify-content:center;gap:24px;padding:8px 0}
+.ring-wrap{position:relative;width:90px;height:90px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--spectrum-blue)}
+.ring-sub{font-size:10px;font-weight:500;color:var(--muted)}
+.ring-key-item{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ring-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
+/* Owner table */
+.owner-table{width:100%;border-collapse:collapse;font-size:12px}
+.owner-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+.owner-table td{padding:7px 8px;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+.owner-table tr:last-child td{border-bottom:none}
+.owner-bar{height:6px;border-radius:3px;background:var(--killian-blue);min-width:4px}
+.owner-pct{font-size:10px;font-weight:700;color:var(--muted);text-align:right}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(5,32,48,.55);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-bg.open{display:flex}
+.modal{
+  background:var(--white);border-radius:12px;box-shadow:var(--shadow-lg);
+  width:680px;max-width:95vw;max-height:90vh;overflow-y:auto;
+  animation:slideUp .2s ease-out;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{
+  background:var(--spectrum-blue);color:var(--white);
+  padding:18px 24px;border-radius:12px 12px 0 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-head h2{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:24px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.form-input{
+  border:1px solid var(--border);border-radius:6px;padding:8px 10px;
+  font-family:inherit;font-size:13px;color:var(--text);
+  transition:border-color .15s;
+}
+.form-input:focus{outline:none;border-color:var(--killian-blue);box-shadow:0 0 0 3px rgba(24,130,199,.12)}
+textarea.form-input{min-height:80px;resize:vertical}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* IE slider */
+.ie-group{display:flex;flex-direction:column;gap:6px}
+.ie-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ie-row{display:flex;align-items:center;gap:10px}
+.ie-row input[type=range]{flex:1;accent-color:var(--killian-blue)}
+.ie-val{font-size:13px;font-weight:700;color:var(--killian-blue);width:20px;text-align:center}
+.ie-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:600;
+  background:var(--spectrum-blue);color:var(--white);
+  padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;
+  opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;
+  border-left:4px solid var(--killian-blue);
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ── */
+
+/* ── OTD TRACKER ── */
+.otd-hero { background:var(--spectrum-blue); border-radius:var(--r); padding:16px 20px; margin-bottom:16px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+.otd-hero-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.55); margin-bottom:4px; }
+.otd-hero-name { font-size:18px; font-weight:800; color:var(--white); }
+.otd-date-nav { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.otd-date-btn { background:rgba(255,255,255,.12); border:none; color:var(--white); border-radius:6px; padding:4px 12px; font-size:18px; cursor:pointer; }
+.otd-date-btn:hover { background:rgba(255,255,255,.25); }
+.otd-date-lbl { font-size:14px; font-weight:700; color:var(--white); min-width:150px; text-align:center; }
+.otd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.otd-kpi { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; border-top:3px solid var(--killian-blue); box-shadow:var(--shadow); text-align:center; }
+.otd-kpi.green { border-top-color:#16a34a; }
+.otd-kpi.red { border-top-color:#dc2626; }
+.otd-kpi.gold { border-top-color:var(--lab-gold); }
+.otd-kval { font-size:30px; font-weight:800; color:var(--spectrum-blue); line-height:1; }
+.otd-kval.green { color:#16a34a; }
+.otd-kval.red { color:#dc2626; }
+.otd-klbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:4px; }
+.otd-summary-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; margin-bottom:20px; }
+.otd-summary-hd { padding:12px 16px; background:var(--spectrum-blue); color:var(--white); font-size:13px; font-weight:700; }
+.otd-summary-table { width:100%; border-collapse:collapse; font-size:12px; }
+.otd-summary-table th { background:#f4f8fc; color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+.otd-summary-table td { padding:8px 12px; border-bottom:1px solid #f0f4f8; vertical-align:middle; }
+.otd-summary-table tr:last-child td { border-bottom:none; }
+.otd-summary-table tr:hover td { background:#f8fbff; }
+.otd-bar-wrap { height:8px; background:#e8eef5; border-radius:4px; overflow:hidden; min-width:80px; }
+.otd-bar-fill { height:100%; border-radius:4px; transition:width .5s; }
+.otd-op-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; margin-bottom:20px; }
+.otd-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
+.otd-card-hd { padding:10px 14px; background:linear-gradient(135deg,#f4f8fc,var(--white)); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.otd-card-name { font-size:13px; font-weight:700; color:var(--spectrum-blue); }
+.otd-pill { font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; background:#dcfce7; color:#166534; }
+.otd-pill.warn { background:#fff7ed; color:#c2410c; }
+.otd-pill.danger { background:#fee2e2; color:#991b1b; }
+.otd-pill.empty { background:#f0f4f8; color:var(--muted); }
+.otd-card-body { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.otd-field { display:flex; flex-direction:column; gap:4px; }
+.otd-field.full { grid-column:1/-1; }
+.otd-flbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.otd-inp { border:1px solid var(--border); border-radius:6px; padding:6px 9px; font-family:inherit; font-size:13px; color:var(--spectrum-blue); font-weight:600; width:100%; transition:border-color .15s; }
+.otd-inp:focus { outline:none; border-color:var(--killian-blue); box-shadow:0 0 0 3px rgba(24,130,199,.12); }
+.otd-inp.ro { background:var(--off-white); color:var(--muted); font-weight:400; pointer-events:none; }
+.otd-card-ft { padding:8px 14px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; background:#fafcff; }
+.otd-save { background:var(--killian-blue); color:var(--white); border:none; border-radius:6px; padding:6px 16px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:background .15s; }
+.otd-save:hover { background:#1470ac; }
+.otd-save.ok { background:#16a34a; }
+
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(3,1fr)}
+  .dash-grid,.matrix-container{grid-template-columns:1fr;flex-direction:column}
+  .matrix-grid{height:auto;grid-template-columns:1fr}
+  .view,.topbar,.nav-tabs{padding-left:16px;padding-right:16px}
+}
+
+/* ══════════════════════ DAILY WINS ══════════════════════ */
+.dw-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.dw-date-pill{background:var(--spectrum-blue);color:var(--white);padding:8px 18px;border-radius:30px;font-size:15px;font-weight:700;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.dw-date-input{background:transparent;border:none;color:var(--white);font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;width:140px}
+.dw-date-input::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer}
+.win-statement-wrap{flex:1;min-width:280px}
+.win-statement-input{width:100%;border:2px solid var(--killian-blue);border-radius:8px;padding:10px 14px;font-family:inherit;font-size:14px;font-weight:600;color:var(--spectrum-blue);background:linear-gradient(135deg,#f0f8ff,var(--white))}
+.win-statement-input:focus{outline:none;border-color:var(--dental-blue);box-shadow:0 0 0 3px rgba(74,190,238,.2)}
+.win-statement-input::placeholder{font-weight:400;color:var(--muted)}
+
+/* Win/Loss scoreboard */
+.scoreboard{
+  border-radius:12px;padding:20px 24px;margin-bottom:20px;
+  display:flex;align-items:center;gap:24px;
+  transition:background .4s;
+}
+.scoreboard.winning{background:linear-gradient(135deg,#052030 0%,#0a3d20 100%);border:2px solid #16a34a}
+.scoreboard.losing{background:linear-gradient(135deg,#052030 0%,#3d0a0a 100%);border:2px solid #dc2626}
+.scoreboard.neutral{background:var(--spectrum-blue);border:2px solid var(--killian-blue)}
+.scoreboard-verdict{font-size:32px;font-weight:800;color:var(--white);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.scoreboard-sub{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px}
+.scoreboard-stats{display:flex;gap:20px;margin-left:auto}
+.sb-stat{text-align:center}
+.sb-stat-val{font-size:28px;font-weight:800;color:var(--white);font-family:'Barlow Condensed',monospace}
+.sb-stat-lbl{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.06em}
+.sb-divider{width:1px;background:rgba(255,255,255,.15);align-self:stretch}
+.progress-ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.progress-ring-wrap svg{transform:rotate(-90deg)}
+.progress-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--white)}
+
+/* Employee lanes */
+.dw-lanes{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.emp-lane{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.emp-lane-head{
+  padding:10px 16px;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,#f4f8fc,var(--white));
+  border-bottom:1px solid var(--border);cursor:pointer;
+}
+.emp-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--white);flex-shrink:0}
+.emp-name{font-size:14px;font-weight:700;color:var(--spectrum-blue)}
+.emp-role{font-size:11px;color:var(--muted)}
+.emp-lane-stats{display:flex;gap:10px;margin-left:auto;align-items:center}
+.emp-stat{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px}
+.emp-stat-done{background:#dcfce7;color:#166534}
+.emp-stat-open{background:#fee2e2;color:#991b1b}
+.emp-stat-prog{background:#ede9fe;color:#5b21b6}
+.emp-mini-bar{height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden;width:80px}
+.emp-mini-fill{height:100%;border-radius:3px;background:var(--killian-blue);transition:width .5s}
+.emp-mini-fill.done{background:#16a34a}
+.lane-tasks{padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.lane-tasks.collapsed{display:none}
+
+/* Task cards */
+.task-card{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--off-white);transition:all .15s;
+  cursor:pointer;
+}
+.task-card:hover{background:var(--white);box-shadow:0 2px 8px rgba(5,32,48,.08);border-color:var(--killian-blue)}
+.task-card.status-complete{background:#f0fdf4;border-color:#bbf7d0;opacity:.85}
+.task-card.status-blocked{background:#fff7ed;border-color:#fed7aa}
+.task-card.status-inprogress{background:#faf5ff;border-color:#ddd6fe}
+.task-status-btn{
+  width:22px;height:22px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  cursor:pointer;transition:all .15s;background:var(--white);margin-top:1px;font-size:11px;
+}
+.task-status-btn.complete{background:#16a34a;border-color:#16a34a;color:var(--white)}
+.task-status-btn.inprogress{background:#7c3aed;border-color:#7c3aed;color:var(--white)}
+.task-status-btn.blocked{background:#ea580c;border-color:#ea580c;color:var(--white)}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:13px;font-weight:600;color:var(--spectrum-blue);line-height:1.35}
+.task-card.status-complete .task-title{text-decoration:line-through;color:var(--muted)}
+.task-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:center}
+.task-target{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px}
+.task-actions-row{display:flex;gap:4px;margin-top:5px;opacity:0;transition:opacity .15s}
+.task-card:hover .task-actions-row{opacity:1}
+.t-act{background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;color:var(--muted)}
+.t-act:hover{border-color:var(--killian-blue);color:var(--killian-blue)}
+.t-act.danger:hover{border-color:#dc2626;color:#dc2626}
+
+/* Add task row */
+.add-task-row{padding:8px 12px;border-top:1px dashed var(--border)}
+.add-task-btn{background:none;border:1px dashed var(--border);border-radius:6px;padding:7px 14px;width:100%;text-align:left;font-family:inherit;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.add-task-btn:hover{border-color:var(--killian-blue);color:var(--killian-blue);background:var(--off-white)}
+
+/* Assignment modal */
+.assign-modal{width:560px}
+
+/* EOD summary */
+.eod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.eod-stat{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-shadow:var(--shadow);text-align:center}
+.eod-val{font-size:26px;font-weight:800;font-family:'Barlow Condensed',monospace}
+.eod-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:3px}
+.eod-emp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4f8}
+.eod-emp-row:last-child{border-bottom:none}
+.eod-emp-name{font-size:13px;font-weight:600;width:110px;flex-shrink:0}
+.eod-bar-track{flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.eod-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.eod-emp-pct{font-size:12px;font-weight:700;width:36px;text-align:right}
+
+
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE — phones ≤ 768px
+   Desktop layout is FULLY PRESERVED above.
+   This block only activates on small screens.
+══════════════════════════════════════════ */
+
+/* Safe area variables */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-width: 768px) {
+
+  /* ── Body & scroll ── */
+  body {
+    overflow-x: hidden;
+    padding-top: var(--sat);
+  }
+
+  /* ── Topbar: compact on mobile ── */
+  .topbar {
+    padding: 10px 14px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .topbar-divider { display: none; }
+  .topbar-title { font-size: 13px; }
+  .topbar-date { display: none; }
+  .logo-text .brand { font-size: 14px; }
+
+  /* ── Nav tabs → bottom bar on mobile ── */
+  .nav-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    top: auto;
+    z-index: 300;
+    display: flex;
+    padding-bottom: var(--sab);
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    box-shadow: 0 -4px 20px rgba(5,32,48,.10);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 4px 6px;
+    font-size: 9px;
+    letter-spacing: .02em;
+    min-width: 64px;
+    border-bottom: none;
+    border-top: 2px solid transparent;
+    gap: 2px;
+    white-space: nowrap;
+  }
+  .nav-tab.active {
+    border-bottom: none;
+    border-top-color: var(--killian-blue);
+    color: var(--killian-blue);
+  }
+  /* Hide emoji on very small screens to save space */
+  @media (max-width: 380px) {
+    .nav-tab { font-size: 8px; min-width: 54px; }
+  }
+
+  /* ── Main content: push above bottom nav ── */
+  .main {
+    padding: 12px 12px calc(72px + var(--sab) + 8px);
+  }
+
+  /* ── Views: full width scroll ── */
+  .view { min-height: 0; }
+
+  /* ── KPI row: 2-col grid ── */
+  .kpi-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .kpi { padding: 12px 14px; }
+  .kpi-val { font-size: 26px; }
+
+  /* ── Dashboard: single column ── */
+  .dash-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* ── Controls bar: wrap ── */
+  .controls {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .ctrl-group { flex: 1 1 calc(50% - 8px); }
+  .ctrl-group.search-wrap { flex: 1 1 100%; }
+  .btn-refresh { width: 100%; }
+  select, input[type=text], input[type=date] { font-size: 14px; padding: 8px 10px; }
+
+  /* ── Table: horizontal scroll ── */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(100vh - 200px);
+  }
+  .raid-table { min-width: 860px; }
+  .raid-table th, .raid-table td { padding: 8px 10px; }
+  .issue-text { max-width: 200px; }
+  .mitigation-text { max-width: 160px; }
+  .notes-text { max-width: 120px; }
+
+  /* ── Matrix: single column ── */
+  .matrix-container {
+    flex-direction: column;
+  }
+  .matrix-container > div:last-child {
+    width: 100%;
+  }
+  .matrix-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .quadrant { min-height: 120px; }
+  .axis-label-x, .axis-label-y { display: none; }
+
+  /* ── Daily Wins ── */
+  .dw-header { flex-wrap: wrap; gap: 10px; }
+  .win-statement-wrap { flex: 1 1 100%; order: 3; }
+  .scoreboard { flex-direction: column; gap: 12px; }
+  .scoreboard-stats { flex-wrap: wrap; margin-left: 0; gap: 12px; }
+  .leader-grid { grid-template-columns: 1fr; }
+  .leader-card-top { flex-wrap: wrap; }
+
+  /* ── Bottom sheets (modals) ── */
+  .modal-bg { align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding-bottom: var(--sab);
+  }
+  .modal-head { border-radius: 0; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+
+  /* ── FAB: add button floats above nav ── */
+  .mobile-fab {
+    display: flex !important;
+  }
+
+  /* ── Stat cards stack ── */
+  .stat-row { grid-template-columns: 1fr 1fr; }
+
+  /* ── Progress section ── */
+  .progress-grid { grid-template-columns: repeat(5, 1fr); }
+
+  /* ── Donut ring row ── */
+  .ring-row { flex-direction: row; gap: 16px; }
+
+  /* ── Mid row on dashboard ── */
+  #mid-row { grid-template-columns: 1fr !important; }
+
+  /* ── EOD grid ── */
+  .eod-grid { grid-template-columns: 1fr 1fr; }
+
+} /* end @media mobile */
+
+/* ── Floating Action Button (mobile only) ── */
+.mobile-fab {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: calc(72px + var(--sab) + 12px);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--killian-blue);
+  color: #fff;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(24,130,199,.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: transform .15s;
+}
+.mobile-fab:active { transform: scale(.92); }
+
+
+/* ── Loading skeleton ── */
+.kpi-skeleton {
+  display: inline-block;
+  width: 48px; height: 32px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  vertical-align: middle;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.topbar-refresh:hover { background: rgba(255,255,255,.22) !important; }
+
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <!-- SK Logo (SVG approximation of wave-hex) -->
+  <div class="logo-mark">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="none" stroke="#1882C7" stroke-width="1.5"></polygon>
+      <path d="M9,15 Q15,10 20,15 Q25,20 31,15" stroke="#4ABEEE" stroke-width="2.5" fill="none" stroke-linecap="round"></path>
+      <path d="M9,22 Q15,27 20,22 Q25,17 31,22" stroke="#1882C7" stroke-width="2.5" fill="none" stroke-linecap="round"></path>
+    </svg>
+  </div>
+  <div class="logo-text">
+    <span class="brand">SPECTRUM KILLIAN</span>
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-title">AoX BU — RAID Log</div>
+  <div class="topbar-date" id="live-date">Wednesday, April 29, 2026</div>
+  <button class="topbar-refresh" id="hdr-refresh-btn" onclick="loadData()" title="Refresh data" style="background: rgba(255, 255, 255, 0.12); border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; color: rgb(255, 255, 255); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; font-weight: 600; margin-left: 4px; opacity: 1;">↻ Refresh</button>
+</header>
+<!-- Loading bar -->
+<div id="loading-bar" style="height: 3px; background: linear-gradient(90deg,var(--killian-blue),var(--dental-blue)); width: 0px; transition: width 0.3s; position: sticky; top: 60px; z-index: 299;"></div>
+<!-- Error banner -->
+<div id="load-error" style="display:none;background:#fef2f2;color:#991b1b;border-bottom:1px solid #fecaca;padding:10px 24px;font-size:13px;font-weight:500;position:sticky;top:63px;z-index:298;"></div>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="setTab(&#39;dashboard&#39;,this)">📊 Dashboard</div>
+  <div class="nav-tab" onclick="setTab(&#39;log&#39;,this)">📋 RAID Log <span class="count" id="open-count">25</span></div>
+  <div class="nav-tab" onclick="setTab(&#39;matrix&#39;,this)">🎯 Impact vs Effort</div>
+  <div class="nav-tab" onclick="setTab(&#39;wins&#39;,this)">🏆 Daily Wins <span class="count" id="wins-count">—</span></div>
+  <div class="nav-tab" onclick="setTab(&#39;otd&#39;,this)">📈 OTD Tracker <span class="count" id="otd-badge">—</span></div>
+</nav>
+
+<!-- DASHBOARD VIEW -->
+<div class="view active" id="view-dashboard">
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi red"><div class="kpi-label">Open Items</div><div class="kpi-val" id="k-open">24</div><div class="kpi-sub">need action</div></div>
+    <div class="kpi purple"><div class="kpi-label">In Progress</div><div class="kpi-val" id="k-inprog">1</div><div class="kpi-sub">being worked</div></div>
+    <div class="kpi green"><div class="kpi-label">Closed This Week</div><div class="kpi-val" id="k-closed-wk">2</div><div class="kpi-sub">resolved ✓</div></div>
+    <div class="kpi"><div class="kpi-label">Critical Priority</div><div class="kpi-val" id="k-crit">6</div><div class="kpi-sub">need immediate focus</div></div>
+    <div class="kpi gold"><div class="kpi-label">Total Items</div><div class="kpi-val" id="k-total">42</div><div class="kpi-sub">all RAID entries</div></div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- Left col -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <!-- Closed this week -->
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:#16a34a"></div>✅ Closed This Week</div>
+        <div class="card-body" id="closed-this-week">
+      <div class="closed-item">
+        <div class="closed-check">✓</div>
+        <div class="closed-info">
+          <div class="closed-issue">Unable to scan off steps; station leads lack bypass access</div>
+          <div class="closed-meta">
+            <span class="badge badge-issue">Issue</span>
+            <span>Abby</span>
+            <span>Closed 2026-04-28</span>
+          </div>
+        </div>
+      </div>
+      <div class="closed-item">
+        <div class="closed-check">✓</div>
+        <div class="closed-info">
+          <div class="closed-issue">Lost experience to support Surgical Guide cases</div>
+          <div class="closed-meta">
+            <span class="badge badge-issue">Issue</span>
+            <span>Abby</span>
+            <span>Closed 2026-04-28</span>
+          </div>
+        </div>
+      </div></div>
+      </div>
+
+      <!-- By type bar -->
+      <div class="card">
+        <div class="card-head"><div class="accent"></div>📂 Open Items by Type</div>
+        <div class="card-body" id="type-bars"><div class="bar-row">
+      <div class="bar-label"><span class="badge badge-risk">Risk</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:80%;background:#dc2626"></div></div>
+      <div class="bar-val">8</div>
+    </div><div class="bar-row">
+      <div class="bar-label"><span class="badge badge-action">Action</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:60%;background:#d97706"></div></div>
+      <div class="bar-val">6</div>
+    </div><div class="bar-row">
+      <div class="bar-label"><span class="badge badge-issue">Issue</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:#2563eb"></div></div>
+      <div class="bar-val">10</div>
+    </div><div class="bar-row">
+      <div class="bar-label"><span class="badge badge-decision">Decision</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:10%;background:#16a34a"></div></div>
+      <div class="bar-val">1</div>
+    </div></div>
+      </div>
+
+      <!-- Owner workload -->
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:var(--lab-gold)"></div>👤 Open Items by Owner</div>
+        <div class="card-body" id="owner-table-wrap">
+    <table class="owner-table">
+      <thead><tr><th>Owner</th><th>Open</th><th style="width:80px"></th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Edward</td>
+          <td style="font-weight:700;color:var(--killian-blue)">8</td>
+          <td><div class="owner-bar" style="width:100%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Deepak</td>
+          <td style="font-weight:700;color:var(--killian-blue)">7</td>
+          <td><div class="owner-bar" style="width:88%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Unassigned</td>
+          <td style="font-weight:700;color:var(--killian-blue)">6</td>
+          <td><div class="owner-bar" style="width:75%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Abby</td>
+          <td style="font-weight:700;color:var(--killian-blue)">4</td>
+          <td><div class="owner-bar" style="width:50%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Scott</td>
+          <td style="font-weight:700;color:var(--killian-blue)">2</td>
+          <td><div class="owner-bar" style="width:25%"></div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">Adriana</td>
+          <td style="font-weight:700;color:var(--killian-blue)">2</td>
+          <td><div class="owner-bar" style="width:25%"></div></td>
+        </tr>
+      </tbody>
+    </table></div>
+      </div>
+    </div>
+
+    <!-- Right col -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <!-- Status donut -->
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:var(--dental-blue)"></div>📈 Status Breakdown</div>
+        <div class="card-body">
+          <div class="ring-row">
+            <div class="ring-wrap">
+              <svg width="90" height="90" viewBox="0 0 90 90" id="ring-svg"><circle cx="45" cy="45" r="36" fill="none" stroke="#16a34a" stroke-width="14" stroke-dasharray="91.55498590461683 134.6396851538483" stroke-dashoffset="0"></circle><circle cx="45" cy="45" r="36" fill="none" stroke="#7c3aed" stroke-width="14" stroke-dasharray="5.385587406153931 220.8090836523112" stroke-dashoffset="-91.55498590461683"></circle><circle cx="45" cy="45" r="36" fill="none" stroke="#dc2626" stroke-width="14" stroke-dasharray="129.25409774769435 96.94057331077076" stroke-dashoffset="-96.94057331077076"></circle></svg>
+              <div class="ring-label"><span id="ring-pct">40%</span><span class="ring-sub">closed</span></div>
+            </div>
+          </div>
+          <div style="margin-top:12px" id="ring-legend">
+    <div class="ring-key-item">
+      <div class="ring-dot" style="background:#16a34a"></div>
+      <span style="font-size:12px;flex:1">Closed</span>
+      <span style="font-size:13px;font-weight:700;color:var(--spectrum-blue)">17</span>
+    </div>
+    <div class="ring-key-item">
+      <div class="ring-dot" style="background:#7c3aed"></div>
+      <span style="font-size:12px;flex:1">In Progress</span>
+      <span style="font-size:13px;font-weight:700;color:var(--spectrum-blue)">1</span>
+    </div>
+    <div class="ring-key-item">
+      <div class="ring-dot" style="background:#dc2626"></div>
+      <span style="font-size:12px;flex:1">Open</span>
+      <span style="font-size:13px;font-weight:700;color:var(--spectrum-blue)">24</span>
+    </div></div>
+        </div>
+      </div>
+
+      <!-- Priority breakdown -->
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:#dc2626"></div>🔴 Priority Breakdown</div>
+        <div class="card-body" id="priority-bars"><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600;color:#dc2626">Critical</div>
+      <div class="bar-track"><div class="bar-fill" style="width:60%;background:#dc2626"></div></div>
+      <div class="bar-val">6</div>
+    </div><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600;color:#c2410c">High</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:#c2410c"></div></div>
+      <div class="bar-val">10</div>
+    </div><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600;color:#a16207">Medium</div>
+      <div class="bar-track"><div class="bar-fill" style="width:70%;background:#a16207"></div></div>
+      <div class="bar-val">7</div>
+    </div><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600;color:#16a34a">Low</div>
+      <div class="bar-track"><div class="bar-fill" style="width:20%;background:#16a34a"></div></div>
+      <div class="bar-val">2</div>
+    </div></div>
+      </div>
+
+      <!-- Severity breakdown -->
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:var(--lab-gold)"></div>⚠️ Severity (Open Items)</div>
+        <div class="card-body" id="severity-bars"><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600">High</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:#dc2626"></div></div>
+      <div class="bar-val">19</div>
+    </div><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600">Medium</div>
+      <div class="bar-track"><div class="bar-fill" style="width:26%;background:#d97706"></div></div>
+      <div class="bar-val">5</div>
+    </div><div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600">Low</div>
+      <div class="bar-track"><div class="bar-fill" style="width:5%;background:#16a34a"></div></div>
+      <div class="bar-val">1</div>
+    </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RAID LOG VIEW -->
+<div class="view" id="view-log">
+  <div class="controls">
+    <div class="ctrl-group search-wrap">
+      <input type="text" class="form-input search-input" id="search-input" placeholder="Search issues, owners, notes…" oninput="renderTable()">
+    </div>
+    <div class="ctrl-group">
+      <label>Type</label>
+      <select id="f-type" onchange="renderTable()">
+        <option value="">All</option>
+        <option>Risk</option><option>Action</option><option>Issue</option><option>Decision</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Status</label>
+      <select id="f-status" onchange="renderTable()">
+        <option value="">All</option>
+        <option>Open</option><option>In Progress</option><option>Closed</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Priority</label>
+      <select id="f-priority" onchange="renderTable()">
+        <option value="">All</option>
+        <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Owner</label>
+      <select id="f-owner" onchange="renderTable()"><option value="">All</option><option>Abby</option><option>Adriana</option><option>Deepak</option><option>Edward</option><option>Jeanette</option><option>Josh C</option><option>Ryan Okon</option><option>Scott</option><option>Unassigned</option></select>
+    </div>
+    <button class="btn btn-ghost" onclick="clearFilters()">Clear</button>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Item</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="raid-table">
+      <thead>
+        <tr>
+          <th onclick="sortBy(&#39;date_initiated&#39;)">Date <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy(&#39;type&#39;)">Type <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy(&#39;priority&#39;)">Priority <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy(&#39;severity&#39;)">Severity <span class="sort-icon">↕</span></th>
+          <th>Issue / Description</th>
+          <th>Mitigation / Action</th>
+          <th onclick="sortBy(&#39;owner&#39;)">Owner <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy(&#39;status&#39;)">Status <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy(&#39;date_due&#39;)">Due Date <span class="sort-icon">↕</span></th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="raid-tbody"><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Unable to scan off steps; station leads lack bypass access</div></td>
+      <td><div class="mitigation-text">Get station leads access to scan off or bypass steps</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-28</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/28: Employees now have bypass access in ABS</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;a7e1ae65-7be8-4aaa-a436-412026837d47&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;a7e1ae65-7be8-4aaa-a436-412026837d47&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Remakes routed to wrong departments creating more remakes</div></td>
+      <td><div class="mitigation-text">Establish correct remake routing process</div></td>
+      <td style="white-space:nowrap;font-size:12px">Deepak &amp; Abby</td>
+      <td><span class="badge badge-inprogress">In Progress</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;601381c4-bf25-42d7-9001-fe2ca41c096b&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;601381c4-bf25-42d7-9001-fe2ca41c096b&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;601381c4-bf25-42d7-9001-fe2ca41c096b&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Bars capacity: only 1 bar/hour</div></td>
+      <td><div class="mitigation-text">Jack and Romero to support; Bar design initiated (3 weeks)</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="notes-text">4/21: Sprues take 0.5hr; Bar design initiated</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;3bba6905-3f4f-4742-aa12-56318597a6a2&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;3bba6905-3f4f-4742-aa12-56318597a6a2&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;3bba6905-3f4f-4742-aa12-56318597a6a2&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">No workflow in ABS for single unit implants / custom abutments</div></td>
+      <td><div class="mitigation-text">Determine missing workflows; add combo case recipe to ABS</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward &amp; Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-21 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/21: Missing workflows identified; ABS pan field under discussion</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;73d77e32-087a-483a-afd4-e3c42cbbfa21&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;73d77e32-087a-483a-afd4-e3c42cbbfa21&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;73d77e32-087a-483a-afd4-e3c42cbbfa21&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">PMMA Arches delaminating / denture chipping from Aspen</div></td>
+      <td><div class="mitigation-text">Audit Nitrogen curing; follow up with Anax team</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="notes-text">4/22: Audit ongoing; Anax meeting scheduled</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;491a8035-57d9-4a67-8a88-b15147d6edf2&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;491a8035-57d9-4a67-8a88-b15147d6edf2&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;491a8035-57d9-4a67-8a88-b15147d6edf2&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Missing Cases</div></td>
+      <td><div class="mitigation-text">Locate and trace missing cases</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;03f98216-3bb2-4d68-b981-6ae4fa1f99bd&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;03f98216-3bb2-4d68-b981-6ae4fa1f99bd&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">6 Case Escalations need to move</div></td>
+      <td><div class="mitigation-text">investigate and resolve</div></td>
+      <td style="white-space:nowrap;font-size:12px">Jeanette</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;c62c7ee7-9b9b-4b16-8878-c40f75a094ab&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;c62c7ee7-9b9b-4b16-8878-c40f75a094ab&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Overall AOX Capacity not aligned with volume needs</div></td>
+      <td><div class="mitigation-text">Allan moved to Case Review; Sam CC Lead; open positions monitored</div></td>
+      <td style="white-space:nowrap;font-size:12px">Scott</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot on hi" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="notes-text">4/21: Restructuring underway</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;2600d9a8-04c4-4656-98e0-5785551fe4bc&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;2600d9a8-04c4-4656-98e0-5785551fe4bc&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;2600d9a8-04c4-4656-98e0-5785551fe4bc&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">High number of design modifications/iterations causing strain on design capacity</div></td>
+      <td><div class="mitigation-text">Create cap on design iterations; after 2 modifications schedule live chat then close (2 weeks MAX)</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div><div class="dot on" title="5/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;b03236bd-903d-45e9-8422-a5ba662b0a69&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;b03236bd-903d-45e9-8422-a5ba662b0a69&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;b03236bd-903d-45e9-8422-a5ba662b0a69&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-critical">Critical</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Unknown action items for immediate risk mitigation</div></td>
+      <td><div class="mitigation-text">Create a RAID log for team visibility</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;9888f52d-beca-47f6-85e6-47d0251fd18a&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;9888f52d-beca-47f6-85e6-47d0251fd18a&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-28</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">PMMA Design for LFX Bars - customers feel PMMA bulky in mouth</div></td>
+      <td><div class="mitigation-text">Redesign PMMA profile for LFX Bars</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;713e1168-d796-402d-a082-ff3d1f0df9df&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;713e1168-d796-402d-a082-ff3d1f0df9df&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;713e1168-d796-402d-a082-ff3d1f0df9df&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">WIP in Matt app is inaccurate - low visibility</div></td>
+      <td><div class="mitigation-text">Investigate and correct WIP data accuracy</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;2a66ac5b-6150-4de9-b82a-f6d39965a93c&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;2a66ac5b-6150-4de9-b82a-f6d39965a93c&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;2a66ac5b-6150-4de9-b82a-f6d39965a93c&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">Remakes for single units TRI</div></td>
+      <td><div class="mitigation-text">Investigate root cause and implement fix</div></td>
+      <td style="white-space:nowrap;font-size:12px">Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;3a00ddd1-0e66-4a1a-8750-0dc3317fa402&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;3a00ddd1-0e66-4a1a-8750-0dc3317fa402&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;3a00ddd1-0e66-4a1a-8750-0dc3317fa402&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Stone model comes late</div></td>
+      <td><div class="mitigation-text">Establish process to ensure stone models arrive on time</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-28 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;b4c7530f-e034-4c2e-93ae-c30ab55a1d01&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;b4c7530f-e034-4c2e-93ae-c30ab55a1d01&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;b4c7530f-e034-4c2e-93ae-c30ab55a1d01&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Lost experience to support Surgical Guide cases</div></td>
+      <td><div class="mitigation-text">Surgical Guides Workflow needs to be built out</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-28</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/28: Surgical guide process executed for pilot</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;8235920b-fe4c-43e5-8c4a-c85a8931df6f&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;8235920b-fe4c-43e5-8c4a-c85a8931df6f&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Lost Case Blk1623</div></td>
+      <td><div class="mitigation-text">Locate case</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">4/22: Case found; custom abutment milling delay identified</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;80ab24fb-42f4-4e72-bf78-8a66458d0922&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;80ab24fb-42f4-4e72-bf78-8a66458d0922&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">Low visibility on case location/step across departments</div></td>
+      <td><div class="mitigation-text">Training with Grant on SKDLA app WIP visibility</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/22: SKDLA app shows WIP per workflow step</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;de22243a-f3eb-4bbe-abbf-806079d650b9&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;de22243a-f3eb-4bbe-abbf-806079d650b9&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Quality huddle - milling tech bypassed QC insertion direction check</div></td>
+      <td><div class="mitigation-text">Create Single Point Lesson; train team on QC steps</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward/Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-23 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/28: Single Point Lesson created</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;33262295-d281-4d5e-b76d-f21e8d4dc13a&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;33262295-d281-4d5e-b76d-f21e8d4dc13a&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;33262295-d281-4d5e-b76d-f21e8d4dc13a&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">LFX arches reported thicker inside mouth</div></td>
+      <td><div class="mitigation-text">Obtain thickness parameters and measuring tool</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/28: Need thickness parameters from Jeanette</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;58db6aa3-3d93-46c7-aecf-08a0caebb655&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;58db6aa3-3d93-46c7-aecf-08a0caebb655&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;58db6aa3-3d93-46c7-aecf-08a0caebb655&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">No way to train or gain visibility on cross training strategy</div></td>
+      <td><div class="mitigation-text">Develop training programs and cross training strategy</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-25 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/20: Completed training matrix</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;ef71366c-9ea4-4165-9d3a-4c7164a37313&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;ef71366c-9ea4-4165-9d3a-4c7164a37313&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;ef71366c-9ea4-4165-9d3a-4c7164a37313&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Case Escalation backup coverage</div></td>
+      <td><div class="mitigation-text">Ryan Okon to support as backup</div></td>
+      <td style="white-space:nowrap;font-size:12px">Jeanette &amp; Ryan Okon</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">4/21: Ryan Okon will support; follow-up scheduled</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;64f7507e-f41a-419f-9ad1-0c1401091c7f&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;64f7507e-f41a-419f-9ad1-0c1401091c7f&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Defect trends are causing late cases</div></td>
+      <td><div class="mitigation-text">Deepak to begin reporting on defect trends in Tier 2</div></td>
+      <td style="white-space:nowrap;font-size:12px">Deepak</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/22: Deepak reporting defect trends in Tier 2</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;a0108af7-3069-4331-9c81-203c55fbc83d&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;a0108af7-3069-4331-9c81-203c55fbc83d&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Output for QC is impacted</div></td>
+      <td><div class="mitigation-text">Added to scope for Neodent DirectFit implementation</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/21: Added to Neodent DirectFit implementation scope</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;3a018b51-1ed1-49db-9a56-05913af8e890&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;3a018b51-1ed1-49db-9a56-05913af8e890&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Training Cesar - providing 50% capacity</div></td>
+      <td><div class="mitigation-text">Cross-train Cesar with design team and final QC</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward &amp; Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-22 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/28: Cross-training set for Wed and Fri</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;f48ffdf7-80a0-413e-94ea-58037f59f473&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;f48ffdf7-80a0-413e-94ea-58037f59f473&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;f48ffdf7-80a0-413e-94ea-58037f59f473&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Recipe issues with designs for fully analog processes</div></td>
+      <td><div class="mitigation-text">Compile recipe list and pass to Lola for ABS implementation</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="notes-text">4/21: Received list of problem recipes; compiling for Lola</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;8fdcc495-ff4d-4892-be7a-20baa8e3484b&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;8fdcc495-ff4d-4892-be7a-20baa8e3484b&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;8fdcc495-ff4d-4892-be7a-20baa8e3484b&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Design capacity - down two employees (vacation/sick)</div></td>
+      <td><div class="mitigation-text">Joe Support</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;04c3f93f-bcc6-49b7-a9da-521af888582b&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;04c3f93f-bcc6-49b7-a9da-521af888582b&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Unknown whether demand will be met today</div></td>
+      <td><div class="mitigation-text">Monitor and escalate</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward &amp; Deepak</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;794033dd-00a5-4413-a17f-c7a5d2049b8c&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;794033dd-00a5-4413-a17f-c7a5d2049b8c&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Doctors upset about speaking to different people about cases</div></td>
+      <td><div class="mitigation-text">Designate single point of contact per case</div></td>
+      <td style="white-space:nowrap;font-size:12px">Scott</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">4/22: Team huddle; requirement communicated</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;ff7e7a12-baeb-4057-875d-753a703a96d3&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;ff7e7a12-baeb-4057-875d-753a703a96d3&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Unknown Capacity in each area</div></td>
+      <td><div class="mitigation-text">Current HC in each area and target output per hour based on capacity available</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby &amp; Deepak</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-20</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;01a12cb0-c292-4add-86ba-c74164928ca9&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;01a12cb0-c292-4add-86ba-c74164928ca9&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">May volume expected higher - capacity risk</div></td>
+      <td><div class="mitigation-text">Complete a capacity plan</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot on" title="4/5"></div><div class="dot " title="4/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/22: Complete a capacity plan today</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;8b7f20a1-5529-4f61-9b12-53eb5efd96f6&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;8b7f20a1-5529-4f61-9b12-53eb5efd96f6&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;8b7f20a1-5529-4f61-9b12-53eb5efd96f6&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-27</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">PMMA not being stained for dimples</div></td>
+      <td><div class="mitigation-text">Implement staining protocol for PMMA dimples</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;49111745-3636-492d-8317-6e9c0d95187a&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;49111745-3636-492d-8317-6e9c0d95187a&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;49111745-3636-492d-8317-6e9c0d95187a&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-27</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">New waste water process with barrels</div></td>
+      <td><div class="mitigation-text">Update all SOPs; training on Wed when containers arrive</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-27</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/28: SOPs updated; training scheduled</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;0f44ee9a-6b39-41c0-bbff-fe5f46f53cde&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;0f44ee9a-6b39-41c0-bbff-fe5f46f53cde&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">Double work: paper + digital remake process</div></td>
+      <td><div class="mitigation-text">Create internal Remake process and digitize Remake form</div></td>
+      <td style="white-space:nowrap;font-size:12px">Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-29 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/23: Digitized Jeanette remake form; drafted SOP</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;3772404b-6642-4791-bc43-3a9fa2cda6e9&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;3772404b-6642-4791-bc43-3a9fa2cda6e9&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;3772404b-6642-4791-bc43-3a9fa2cda6e9&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">TRI screw sheets need to be updated</div></td>
+      <td><div class="mitigation-text">Update TRI screw reference sheets</div></td>
+      <td style="white-space:nowrap;font-size:12px">Deepak</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-29 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;98798eea-cfe5-42d0-bf10-7b77928dc846&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;98798eea-cfe5-42d0-bf10-7b77928dc846&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;98798eea-cfe5-42d0-bf10-7b77928dc846&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-low">Low</span></td>
+      <td><div class="issue-text">Colorizing too dark, leads to remakes</div></td>
+      <td><div class="mitigation-text">Investigate colorizing standard and calibrate</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;32ed1b29-ebf0-4a04-8048-8a5a53138541&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;32ed1b29-ebf0-4a04-8048-8a5a53138541&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;32ed1b29-ebf0-4a04-8048-8a5a53138541&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-21</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Computers need more than 8GB RAM; crashing frequently</div></td>
+      <td><div class="mitigation-text">Request RAM upgrades</div></td>
+      <td style="white-space:nowrap;font-size:12px">Scott</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;228d65b4-b446-43d0-88a0-46d2aa999aaa&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;228d65b4-b446-43d0-88a0-46d2aa999aaa&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;228d65b4-b446-43d0-88a0-46d2aa999aaa&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">Area Schedules; review capacity playbook</div></td>
+      <td><div class="mitigation-text">Collect schedules from every dept; analyze via Paychex</div></td>
+      <td style="white-space:nowrap;font-size:12px">Adriana</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:#dc2626;font-weight:700">2026-04-22 ⚠️</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/20: Schedules collected; enter official schedules into Paychex</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;31ee3770-1d8e-4095-b1bb-73baabd5c8f8&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;31ee3770-1d8e-4095-b1bb-73baabd5c8f8&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;31ee3770-1d8e-4095-b1bb-73baabd5c8f8&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-decision">Decision</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-high">High</span></td>
+      <td><div class="issue-text">TVs not being utilized; need process for viewing data</div></td>
+      <td><div class="mitigation-text">Determine data display process and assign accountability</div></td>
+      <td style="white-space:nowrap;font-size:12px">Abby</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;d1a87900-0d4c-4534-8a8a-e03ff6a9ef98&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;d1a87900-0d4c-4534-8a8a-e03ff6a9ef98&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;d1a87900-0d4c-4534-8a8a-e03ff6a9ef98&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-20</td>
+      <td><span class="badge badge-risk">Risk</span></td>
+      <td><span class="badge badge-medium">Medium</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">Case entry staff disinfecting cases instead of data entry</div></td>
+      <td><div class="mitigation-text">Return to original workflow; Raj to provide extra support</div></td>
+      <td style="white-space:nowrap;font-size:12px">Scott</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">2026-04-23</td>
+      <td><div class="ie-dots"><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot on" title="3/5"></div><div class="dot " title="3/5"></div><div class="dot " title="3/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">4/27: Case entry stayed in data entry; Raj notified</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;e124cfa3-2379-4535-ac89-3ff7865faf1f&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;e124cfa3-2379-4535-ac89-3ff7865faf1f&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-27</td>
+      <td><span class="badge badge-issue">Issue</span></td>
+      <td><span class="badge badge-low">Low</span></td>
+      <td><span class="badge badge-sev-low">Low</span></td>
+      <td><div class="issue-text">Sophia cannot upload cases into portal</div></td>
+      <td><div class="mitigation-text">Resolve portal upload issue</div></td>
+      <td style="white-space:nowrap;font-size:12px">Josh C</td>
+      <td><span class="badge badge-closed">Closed</span></td>
+      <td style="white-space:nowrap;font-size:12px">✓</td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div><div class="dot " title="1/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;754c23b6-5c87-42e2-ba41-118bbd994034&#39;)">Edit</button>
+          
+          <button class="act-btn del" onclick="deleteItem(&#39;754c23b6-5c87-42e2-ba41-118bbd994034&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-23</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-low">Low</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">One computer needs to be setup for imetric</div></td>
+      <td><div class="mitigation-text">Configure imetric workstation</div></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;6c13ef5b-7f8e-4a25-a7f4-aab5e2201d9d&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;6c13ef5b-7f8e-4a25-a7f4-aab5e2201d9d&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;6c13ef5b-7f8e-4a25-a7f4-aab5e2201d9d&#39;)">Del</button>
+        </div>
+      </td>
+    </tr><tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">2026-04-22</td>
+      <td><span class="badge badge-action">Action</span></td>
+      <td><span class="badge badge-low">Low</span></td>
+      <td><span class="badge badge-sev-medium">Medium</span></td>
+      <td><div class="issue-text">Verification jig creating unnecessary work</div></td>
+      <td><div class="mitigation-text">Eliminate verification jig from workflow</div></td>
+      <td style="white-space:nowrap;font-size:12px">Edward</td>
+      <td><span class="badge badge-open">Open</span></td>
+      <td style="white-space:nowrap;font-size:12px">—</td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="ie-dots"><div class="dot on" title="2/5"></div><div class="dot on" title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div><div class="dot " title="2/5"></div></div></td>
+      <td><div class="notes-text">—</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem(&#39;ee70a9f1-c2cb-496a-9e17-60bdc1515409&#39;)">Edit</button>
+          <button class="act-btn close" onclick="closeItem(&#39;ee70a9f1-c2cb-496a-9e17-60bdc1515409&#39;)">✓ Close</button>
+          <button class="act-btn del" onclick="deleteItem(&#39;ee70a9f1-c2cb-496a-9e17-60bdc1515409&#39;)">Del</button>
+        </div>
+      </td>
+    </tr></tbody>
+    </table>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:10px;text-align:right" id="table-count">Showing 42 of 42 items</div>
+</div>
+
+<!-- MATRIX VIEW -->
+<div class="view" id="view-matrix">
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <label>Show</label>
+      <select id="m-status" onchange="renderMatrix()">
+        <option value="Open">Open Items</option>
+        <option value="Closed">Closed Items</option>
+        <option value="">All Items</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Type</label>
+      <select id="m-type" onchange="renderMatrix()">
+        <option value="">All Types</option>
+        <option>Risk</option><option>Action</option><option>Issue</option><option>Decision</option>
+      </select>
+    </div>
+    <span style="font-size:12px;color:var(--muted);margin-left:auto">Click any item to view details. Set Impact &amp; Effort scores in the RAID Log to position items on the matrix.</span>
+  </div>
+
+  <div class="matrix-container">
+    <div class="matrix-wrap">
+      <div class="matrix-title">
+        ⚡ Impact vs Effort Matrix
+        <span style="font-size:12px;color:var(--muted);font-weight:500">— drag items between quadrants or update scores in the log</span>
+      </div>
+      <div style="position:relative;padding-bottom:28px;padding-left:28px">
+        <div class="axis-label-y">← Low Effort · High Effort →</div>
+        <div class="matrix-grid" id="matrix-grid">
+          <!-- Q1: High Impact, Low Effort = Quick Wins -->
+          <div class="quadrant q-quick-wins" id="q-quick-wins">
+            <div class="q-label">⚡ Quick Wins</div>
+            <div class="q-desc">High Impact · Low Effort — Do First</div>
+          </div>
+          <!-- Q2: High Impact, High Effort = Major Projects -->
+          <div class="quadrant q-major" id="q-major">
+            <div class="q-label">🏔 Major Projects</div>
+            <div class="q-desc">High Impact · High Effort — Plan &amp; Schedule</div>
+          </div>
+          <!-- Q3: Low Impact, Low Effort = Fill-Ins -->
+          <div class="quadrant q-fill-ins" id="q-fill-ins">
+            <div class="q-label">📌 Fill-Ins</div>
+            <div class="q-desc">Low Impact · Low Effort — Do When Possible</div>
+          </div>
+          <!-- Q4: Low Impact, High Effort = Thankless Tasks -->
+          <div class="quadrant q-thankless" id="q-thankless">
+            <div class="q-label">⚠️ Reconsider</div>
+            <div class="q-desc">Low Impact · High Effort — Avoid or Delegate</div>
+          </div>
+        </div>
+        <div class="axis-label-x">← Low Impact · High Impact →</div>
+      </div>
+    </div>
+
+    <!-- Side panel -->
+    <div style="display:flex;flex-direction:column;gap:16px;width:260px;flex-shrink:0">
+      <div class="card">
+        <div class="card-head"><div class="accent"></div>Quadrant Summary</div>
+        <div class="card-body" id="matrix-summary"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:var(--lab-gold)"></div>📌 Items Without Scores</div>
+        <div class="card-body" id="unscored-list" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- DAILY WINS VIEW -->
+<div class="view" id="view-wins">
+
+  <!-- Header row -->
+  <div class="dw-header">
+    <div class="dw-date-pill">
+      📅 <input type="date" class="dw-date-input" id="dw-date" onchange="loadWinPlan()">
+    </div>
+    <div class="win-statement-wrap">
+      <input class="win-statement-input" id="win-statement" type="text" placeholder="🏆 How do we win today? Define your daily goal…" onblur="saveWinStatement()">
+    </div>
+    <button class="btn btn-primary" onclick="openAssignModal()">+ Assign Task</button>
+    <button class="btn btn-gold" onclick="renderEOD()">📊 EOD Report</button>
+  </div>
+
+  <!-- Scoreboard -->
+  <div class="scoreboard neutral" id="scoreboard">
+    <div>
+      <div class="scoreboard-verdict" id="sb-verdict">Today's Plan</div>
+      <div class="scoreboard-sub" id="sb-sub">Add tasks to track your day</div>
+    </div>
+    <div class="scoreboard-stats">
+      <div class="sb-stat"><div class="sb-stat-val" id="sb-complete">0</div><div class="sb-stat-lbl">Complete</div></div>
+      <div class="sb-divider"></div>
+      <div class="sb-stat"><div class="sb-stat-val" id="sb-inprog">0</div><div class="sb-stat-lbl">In Progress</div></div>
+      <div class="sb-divider"></div>
+      <div class="sb-stat"><div class="sb-stat-val" id="sb-blocked">0</div><div class="sb-stat-lbl">Blocked</div></div>
+      <div class="sb-divider"></div>
+      <div class="sb-stat"><div class="sb-stat-val" id="sb-total">0</div><div class="sb-stat-lbl">Total</div></div>
+    </div>
+    <div class="progress-ring-wrap" style="margin-left:16px">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"></circle>
+        <circle cx="36" cy="36" r="28" fill="none" stroke="#16a34a" stroke-width="10" stroke-dasharray="176" id="sb-ring-fill" stroke-dashoffset="176" stroke-linecap="round" style="transition:stroke-dashoffset .6s"></circle>
+      </svg>
+      <div class="progress-ring-pct" id="sb-ring-pct">0%</div>
+    </div>
+  </div>
+
+  <!-- Employee Lanes -->
+  <div class="dw-lanes" id="dw-lanes">
+    <div style="text-align:center;padding:40px;color:var(--muted)">
+      Loading today's plan… or click <strong>+ Assign Task</strong> to get started.
+    </div>
+  </div>
+
+  <!-- EOD Report (hidden until triggered) -->
+  <div id="eod-section" style="display:none">
+    <div style="font-size:15px;font-weight:700;color:var(--spectrum-blue);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <div style="width:4px;height:20px;background:var(--lab-gold);border-radius:2px"></div>
+      End of Day Report
+    </div>
+    <div class="eod-grid" id="eod-kpis"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:#16a34a"></div>✅ Completed Tasks</div>
+        <div class="card-body" id="eod-completed"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="accent" style="background:#dc2626"></div>❌ Incomplete / Blocked</div>
+        <div class="card-body" id="eod-incomplete"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><div class="accent" style="background:var(--lab-gold)"></div>👤 Performance by Employee</div>
+      <div class="card-body" id="eod-by-emp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGNMENT MODAL -->
+<div class="modal-bg" id="assign-modal">
+  <div class="modal assign-modal">
+    <div class="modal-head">
+      <h2 id="assign-modal-title">Assign Task</h2>
+      <button class="modal-close" onclick="closeAssignModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="a-edit-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Task / Action *</label>
+          <textarea class="form-input" id="a-title" rows="2" placeholder="What needs to be done today?"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Link to RAID Item (optional)</label>
+          <select class="form-input" id="a-raid-link">
+            <option value="">— Standalone task —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign To *</label>
+          <select class="form-input" id="a-assignee">
+            <option value="">Select employee…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-input" id="a-priority">
+            <option>Critical</option><option selected="">High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input" id="a-category">
+            <option>Action</option><option>Risk</option><option>Issue</option><option>Decision</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Completion</label>
+          <input class="form-input" id="a-target" type="text" placeholder="e.g. EOD, 2:00 PM, Before Tier 2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="a-status">
+            <option>Not Started</option><option>In Progress</option><option>Complete</option><option>Blocked</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notes / Context</label>
+          <textarea class="form-input" id="a-notes" rows="2" placeholder="Any context, dependencies, or completion notes…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeAssignModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveAssignment()">Save Assignment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modal-title">Add RAID Item</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Issue / Description *</label>
+          <textarea class="form-input" id="f-issue" rows="3" placeholder="Describe the risk, action, issue, or decision…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-input" id="f-type-m">
+            <option>Risk</option><option>Action</option><option>Issue</option><option>Decision</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Severity</label>
+          <select class="form-input" id="f-severity-m">
+            <option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Mitigation / Action</label>
+          <textarea class="form-input" id="f-mitigation" rows="2" placeholder="What is the plan to address this?"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Owner</label>
+          <input class="form-input" id="f-owner-m" type="text" placeholder="Name(s)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input class="form-input" id="f-due-m" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="f-status-m">
+            <option>Open</option><option>In Progress</option><option>Closed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-input" id="f-priority-m">
+            <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date Initiated</label>
+          <input class="form-input" id="f-initiated-m" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date Closed</label>
+          <input class="form-input" id="f-closed-m" type="date">
+        </div>
+
+        <!-- Impact slider -->
+        <div class="form-group">
+          <div class="ie-label">Impact Score (1–5)</div>
+          <div class="ie-row">
+            <input type="range" min="1" max="5" value="3" id="f-impact-m" oninput="document.getElementById(&#39;impact-val&#39;).textContent=this.value">
+            <div class="ie-val" id="impact-val">3</div>
+          </div>
+          <div class="ie-labels"><span>Low</span><span>High</span></div>
+        </div>
+
+        <!-- Effort slider -->
+        <div class="form-group">
+          <div class="ie-label">Effort Score (1–5)</div>
+          <div class="ie-row">
+            <input type="range" min="1" max="5" value="3" id="f-effort-m" oninput="document.getElementById(&#39;effort-val&#39;).textContent=this.value">
+            <div class="ie-val" id="effort-val">3</div>
+          </div>
+          <div class="ie-labels"><span>Low</span><span>High</span></div>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" id="f-notes-m" rows="3" placeholder="Updates, context, next steps…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OTD TRACKER VIEW -->
+<div class="view" id="view-otd">
+
+  <div class="otd-hero">
+    <div><div class="otd-hero-title">AoX Operations</div><div class="otd-hero-name">📈 On-Time Delivery Tracker</div></div>
+    <div class="otd-date-nav">
+      <button class="otd-date-btn" onclick="otdNav(-1)">‹</button>
+      <div class="otd-date-lbl" id="otd-lbl">—</div>
+      <button class="otd-date-btn" onclick="otdNav(+1)">›</button>
+      <input type="date" id="otd-pick" onchange="otdPick()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 9px;color:var(--white);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+    </div>
+    <button class="btn btn-gold" onclick="otdExport()" style="margin-left:8px">⬇ Export CSV</button>
+  </div>
+
+  <div class="otd-grid">
+    <div class="otd-kpi"><div class="otd-kval" id="otd-k-otd">—</div><div class="otd-klbl">Overall OTD %</div></div>
+    <div class="otd-kpi green"><div class="otd-kval green" id="otd-k-on">—</div><div class="otd-klbl">Ops On Time (≥95%)</div></div>
+    <div class="otd-kpi red"><div class="otd-kval red" id="otd-k-late">—</div><div class="otd-klbl">Late Cases Total</div></div>
+    <div class="otd-kpi gold"><div class="otd-kval" id="otd-k-rmk">—</div><div class="otd-klbl">Remakes Today</div></div>
+  </div>
+
+  <div class="otd-summary-card">
+    <div class="otd-summary-hd">📊 Daily Summary — All Operations</div>
+    <div style="overflow-x:auto">
+      <table class="otd-summary-table">
+        <thead><tr>
+          <th>Operation</th><th>Planned</th><th>Actual</th><th>Late</th><th>Remakes</th><th>OTD %</th><th style="min-width:100px">Progress</th><th>Supervisor</th><th>Notes</th>
+        </tr></thead>
+        <tbody id="otd-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="font-size:15px;font-weight:700;color:var(--spectrum-blue);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+    <div style="width:4px;height:18px;background:var(--killian-blue);border-radius:2px"></div>
+    Enter / Update by Operation
+  </div>
+  <div class="otd-op-grid" id="otd-cards"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════ */
+const SB_URL = 'https://asdunkqodixbhbohxtuq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzZHVua3FvZGl4Ymhib2h4dHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDUwNTcsImV4cCI6MjA5MDgyMTA1N30.lStrSSEpwFFk5GuXl2qzh2tr6bLZFY4_x9u6q4FcVeo';
+
+const PORDER = {Critical:0,High:1,Medium:2,Low:3};
+const SORDER = {High:0,Medium:1,Low:2};
+
+let DATA = [];
+let sortCol = 'priority';
+let sortDir = 1;
+
+/* ════════════════════════════════════════════
+   API
+════════════════════════════════════════════ */
+async function sbFetch(path, method='GET', body=null){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000); // 12s timeout
+  try {
+    const opts = {
+      method,
+      signal: controller.signal,
+      headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'}
+    };
+    if(body) opts.body = JSON.stringify(body);
+    const r = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+    if(!r.ok){
+      const msg = await r.text();
+      throw new Error(`${r.status}: ${msg}`);
+    }
+    const text = await r.text();
+    return text ? JSON.parse(text) : [];
+  } catch(e) {
+    if(e.name === 'AbortError') throw new Error('Request timed out — check your connection');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadData(){
+  setLoading(true);
+  try {
+    DATA = await sbFetch('raid_items?order=date_initiated.desc');
+    renderAll();
+    hideError();
+  } catch(e) {
+    showError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  const el = document.getElementById('loading-bar');
+  if(el) el.style.width = on ? '100%' : '0';
+  const refresh = document.getElementById('hdr-refresh-btn');
+  if(refresh) refresh.style.opacity = on ? '.4' : '1';
+}
+
+function showError(msg) {
+  let el = document.getElementById('load-error');
+  if(!el) return;
+  el.textContent = '⚠ Failed to load data: ' + msg + ' — check your internet connection and try refreshing.';
+  el.style.display = 'block';
+}
+
+function hideError() {
+  const el = document.getElementById('load-error');
+  if(el) el.style.display = 'none';
+}
+
+/* ════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════ */
+let winsInited = false;
+function setTab(name, el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name==='matrix') renderMatrix();
+  if(name==='wins' && !winsInited){ winsInited=true; initWins(); }
+  else if(name==='wins') { loadWinPlan(); }
+  if(name==='otd') initOTD();
+  if(window._mobileTabHook) window._mobileTabHook();
+}
+
+/* ════════════════════════════════════════════
+   RENDER ALL
+════════════════════════════════════════════ */
+function renderAll(){
+  renderKPIs();
+  renderDashboard();
+  renderTable();
+  populateOwnerFilter();
+}
+
+/* ════════════════════════════════════════════
+   KPIs
+════════════════════════════════════════════ */
+function renderKPIs(){
+  const open = DATA.filter(d=>d.status==='Open').length;
+  const inprog = DATA.filter(d=>d.status==='In Progress').length;
+  const crit = DATA.filter(d=>d.priority==='Critical'&&d.status!=='Closed').length;
+  const total = DATA.length;
+  const thisWeek = getClosedThisWeek().length;
+
+  document.getElementById('k-open').textContent = open;
+  document.getElementById('k-inprog').textContent = inprog;
+  document.getElementById('k-closed-wk').textContent = thisWeek;
+  document.getElementById('k-crit').textContent = crit;
+  document.getElementById('k-total').textContent = total;
+  document.getElementById('open-count').textContent = open + inprog;
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════ */
+function getClosedThisWeek(){
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate()-now.getDay()+(now.getDay()===0?-6:1));
+  monday.setHours(0,0,0,0);
+  return DATA.filter(d=>{
+    if(d.status!=='Closed') return false;
+    const dc = d.date_closed ? new Date(d.date_closed) : null;
+    return dc && dc >= monday;
+  });
+}
+
+function renderDashboard(){
+  // Closed this week
+  const closed = getClosedThisWeek();
+  const cwEl = document.getElementById('closed-this-week');
+  if(!closed.length){
+    cwEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">No items closed this week yet</div>';
+  } else {
+    cwEl.innerHTML = closed.map(d=>`
+      <div class="closed-item">
+        <div class="closed-check">✓</div>
+        <div class="closed-info">
+          <div class="closed-issue">${esc(d.issue)}</div>
+          <div class="closed-meta">
+            <span class="badge badge-${(d.type||'').toLowerCase()}">${d.type||'—'}</span>
+            <span>${d.owner||'—'}</span>
+            ${d.date_closed?`<span>Closed ${d.date_closed}</span>`:''}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // By type bars
+  const types = ['Risk','Action','Issue','Decision'];
+  const openItems = DATA.filter(d=>d.status!=='Closed');
+  const maxType = Math.max(...types.map(t=>openItems.filter(d=>d.type===t).length),1);
+  document.getElementById('type-bars').innerHTML = types.map(t=>{
+    const cnt = openItems.filter(d=>d.type===t).length;
+    const pct = Math.round(cnt/maxType*100);
+    const colors = {Risk:'#dc2626',Action:'#d97706',Issue:'#2563eb',Decision:'#16a34a'};
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="badge badge-${t.toLowerCase()}">${t}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[t]||'var(--killian-blue)'}"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`;
+  }).join('');
+
+  // Owner table
+  const ownerMap = {};
+  openItems.forEach(d=>{
+    const owners = (d.owner||'Unassigned').split(/[&\/,]/).map(o=>o.trim()).filter(Boolean);
+    owners.forEach(o=>{ ownerMap[o]=(ownerMap[o]||0)+1; });
+  });
+  const ownersSorted = Object.entries(ownerMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxOwner = ownersSorted[0]?.[1]||1;
+  document.getElementById('owner-table-wrap').innerHTML = `
+    <table class="owner-table">
+      <thead><tr><th>Owner</th><th>Open</th><th style="width:80px"></th></tr></thead>
+      <tbody>${ownersSorted.map(([o,cnt])=>`
+        <tr>
+          <td style="font-weight:500;color:var(--spectrum-blue)">${esc(o)}</td>
+          <td style="font-weight:700;color:var(--killian-blue)">${cnt}</td>
+          <td><div class="owner-bar" style="width:${Math.round(cnt/maxOwner*100)}%"></div></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  // Donut ring
+  const total = DATA.length;
+  const cl = DATA.filter(d=>d.status==='Closed').length;
+  const op = DATA.filter(d=>d.status==='Open').length;
+  const ip = DATA.filter(d=>d.status==='In Progress').length;
+  const pct = total ? Math.round(cl/total*100) : 0;
+  const r=36, circ=2*Math.PI*r;
+  const slices = [
+    {n:'Closed', v:cl, c:'#16a34a'},
+    {n:'In Progress', v:ip, c:'#7c3aed'},
+    {n:'Open', v:op, c:'#dc2626'}
+  ];
+  let offset=0;
+  document.getElementById('ring-svg').innerHTML = slices.map(s=>{
+    const dash = total?circ*s.v/total:0;
+    const gap = circ-dash;
+    const el = `<circle cx="45" cy="45" r="${r}" fill="none" stroke="${s.c}" stroke-width="14" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" />`;
+    offset+=dash;
+    return el;
+  }).join('');
+  document.getElementById('ring-pct').textContent = pct+'%';
+  document.getElementById('ring-legend').innerHTML = slices.map(s=>`
+    <div class="ring-key-item">
+      <div class="ring-dot" style="background:${s.c}"></div>
+      <span style="font-size:12px;flex:1">${s.n}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--spectrum-blue)">${s.v}</span>
+    </div>`).join('');
+
+  // Priority bars
+  const priorities = ['Critical','High','Medium','Low'];
+  const allOpen = DATA.filter(d=>d.status!=='Closed');
+  const maxP = Math.max(...priorities.map(p=>allOpen.filter(d=>d.priority===p).length),1);
+  const pcols = {Critical:'#dc2626',High:'#c2410c',Medium:'#a16207',Low:'#16a34a'};
+  document.getElementById('priority-bars').innerHTML = priorities.map(p=>{
+    const cnt = allOpen.filter(d=>d.priority===p).length;
+    return `<div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600;color:${pcols[p]||'var(--muted)'}">${p}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxP*100)}%;background:${pcols[p]}"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`;
+  }).join('');
+
+  // Severity bars
+  const sevs = ['High','Medium','Low'];
+  const scols = {High:'#dc2626',Medium:'#d97706',Low:'#16a34a'};
+  const maxS = Math.max(...sevs.map(s=>allOpen.filter(d=>(d.severity||'').toLowerCase()===s.toLowerCase()).length),1);
+  document.getElementById('severity-bars').innerHTML = sevs.map(s=>{
+    const cnt = allOpen.filter(d=>(d.severity||'').toLowerCase()===s.toLowerCase()).length;
+    return `<div class="bar-row">
+      <div class="bar-label" style="font-size:12px;font-weight:600">${s}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxS*100)}%;background:${scols[s]}"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   TABLE
+════════════════════════════════════════════ */
+function getFiltered(){
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const fType = document.getElementById('f-type').value;
+  const fStatus = document.getElementById('f-status').value;
+  const fPriority = document.getElementById('f-priority').value;
+  const fOwner = document.getElementById('f-owner').value;
+
+  return DATA.filter(d=>{
+    if(fType && d.type!==fType) return false;
+    if(fStatus && d.status!==fStatus) return false;
+    if(fPriority && d.priority!==fPriority) return false;
+    if(fOwner && !(d.owner||'').toLowerCase().includes(fOwner.toLowerCase())) return false;
+    if(search){
+      const blob = [d.issue,d.owner,d.mitigation,d.notes,d.type,d.status].join(' ').toLowerCase();
+      if(!blob.includes(search)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    let va=a[sortCol]??'', vb=b[sortCol]??'';
+    if(sortCol==='priority'){va=PORDER[va]??99;vb=PORDER[vb]??99;}
+    if(sortCol==='severity'){va=SORDER[va]??99;vb=SORDER[vb]??99;}
+    if(va<vb) return -sortDir;
+    if(va>vb) return sortDir;
+    return 0;
+  });
+}
+
+function renderTable(){
+  const rows = getFiltered();
+  document.getElementById('table-count').textContent = `Showing ${rows.length} of ${DATA.length} items`;
+  const tbody = document.getElementById('raid-tbody');
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">No items match your filters</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(d=>{
+    const type = (d.type||'').toLowerCase();
+    const pri = (d.priority||'').toLowerCase();
+    const sev = (d.severity||'').toLowerCase();
+    const stat = (d.status||'').toLowerCase().replace(' ','');
+    const due = d.date_due;
+    const overdue = due && d.status!=='Closed' && new Date(due) < new Date();
+    const impDots = dots(d.impact||0, 5, false);
+    const effDots = dots(d.effort||0, 5, true);
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--muted)">${d.date_initiated||'—'}</td>
+      <td><span class="badge badge-${type}">${d.type||'—'}</span></td>
+      <td><span class="badge badge-${pri}">${d.priority||'—'}</span></td>
+      <td><span class="badge badge-sev-${sev}">${d.severity||'—'}</span></td>
+      <td><div class="issue-text">${esc(d.issue)}</div></td>
+      <td><div class="mitigation-text">${esc(d.mitigation||'—')}</div></td>
+      <td style="white-space:nowrap;font-size:12px">${esc(d.owner||'—')}</td>
+      <td><span class="badge badge-${stat}">${d.status||'—'}</span></td>
+      <td style="white-space:nowrap;font-size:12px${overdue?';color:#dc2626;font-weight:700':''}">${due||(d.status==='Closed'?'✓':'—')}${overdue?' ⚠️':''}</td>
+      <td>${impDots}</td>
+      <td>${effDots}</td>
+      <td><div class="notes-text">${esc(d.notes||'—')}</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="act-btn" onclick="editItem('${d.id}')">Edit</button>
+          ${d.status!=='Closed'?`<button class="act-btn close" onclick="closeItem('${d.id}')">✓ Close</button>`:''}
+          <button class="act-btn del" onclick="deleteItem('${d.id}')">Del</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function dots(val, max, isEffort){
+  return `<div class="ie-dots">${Array.from({length:max},(_,i)=>`<div class="dot ${i<val?'on'+(isEffort&&val>=4?' hi':''):''}" title="${val}/${max}"></div>`).join('')}</div>`;
+}
+
+function sortBy(col){
+  if(sortCol===col) sortDir*=-1;
+  else { sortCol=col; sortDir=1; }
+  renderTable();
+}
+
+function clearFilters(){
+  document.getElementById('search-input').value='';
+  document.getElementById('f-type').value='';
+  document.getElementById('f-status').value='';
+  document.getElementById('f-priority').value='';
+  document.getElementById('f-owner').value='';
+  renderTable();
+}
+
+function populateOwnerFilter(){
+  const owners = [...new Set(DATA.map(d=>d.owner||'Unassigned')
+    .flatMap(o=>o.split(/[&\/,]/).map(x=>x.trim())).filter(Boolean))].sort();
+  const sel = document.getElementById('f-owner');
+  const cur = sel.value;
+  sel.innerHTML='<option value="">All</option>'+owners.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
+}
+
+/* ════════════════════════════════════════════
+   MATRIX
+════════════════════════════════════════════ */
+function renderMatrix(){
+  const fStatus = document.getElementById('m-status').value;
+  const fType = document.getElementById('m-type').value;
+  let items = DATA.filter(d=>{
+    if(fStatus && d.status!==fStatus) return false;
+    if(fType && d.type!==fType) return false;
+    return true;
+  });
+
+  const scored = items.filter(d=>d.impact&&d.effort);
+  const unscored = items.filter(d=>!d.impact||!d.effort);
+
+  // Quadrants: impact>3 = high, effort>3 = high
+  const qw = scored.filter(d=>d.impact>3&&d.effort<=3);  // quick wins
+  const qm = scored.filter(d=>d.impact>3&&d.effort>3);   // major
+  const qf = scored.filter(d=>d.impact<=3&&d.effort<=3); // fill-ins
+  const qt = scored.filter(d=>d.impact<=3&&d.effort>3);  // thankless
+
+  function renderQ(items){
+    return items.sort((a,b)=>(PORDER[a.priority]??99)-(PORDER[b.priority]??99)).map(d=>`
+      <div class="matrix-item" onclick="editItem('${d.id}')">
+        <div class="matrix-item-issue">${esc(d.issue)}</div>
+        <div class="matrix-item-meta">
+          <span class="badge badge-${(d.type||'').toLowerCase()}">${d.type||'?'}</span>
+          <span class="badge badge-${(d.priority||'low').toLowerCase()}">${d.priority||'—'}</span>
+          <span style="font-size:10px;color:var(--muted)">${d.owner||'—'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  const bases = document.querySelectorAll('.quadrant');
+  bases.forEach(q=>{
+    // Clear dynamic items but keep header
+    q.querySelectorAll('.matrix-item').forEach(i=>i.remove());
+  });
+  document.getElementById('q-quick-wins').insertAdjacentHTML('beforeend', renderQ(qw));
+  document.getElementById('q-major').insertAdjacentHTML('beforeend', renderQ(qm));
+  document.getElementById('q-fill-ins').insertAdjacentHTML('beforeend', renderQ(qf));
+  document.getElementById('q-thankless').insertAdjacentHTML('beforeend', renderQ(qt));
+
+  document.getElementById('matrix-summary').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${[['⚡ Quick Wins',qw.length,'#16a34a'],['🏔 Major Projects',qm.length,'#dc2626'],['📌 Fill-Ins',qf.length,'#0369a1'],['⚠️ Reconsider',qt.length,'#a16207']].map(([l,n,c])=>`
+        <div class="ring-key-item">
+          <div class="ring-dot" style="background:${c}"></div>
+          <span style="font-size:12px;flex:1">${l}</span>
+          <span style="font-size:14px;font-weight:700;color:${c}">${n}</span>
+        </div>`).join('')}
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;font-size:11px;color:var(--muted)">${unscored.length} item(s) have no scores</div>
+    </div>`;
+
+  document.getElementById('unscored-list').innerHTML = unscored.length
+    ? unscored.map(d=>`<div style="font-size:12px;padding:6px 0;border-bottom:1px solid #f0f4f8;cursor:pointer;color:var(--spectrum-blue);font-weight:500" onclick="editItem('${d.id}')">${esc(d.issue)}<div style="font-size:10px;color:var(--muted);margin-top:2px">${d.owner||'Unassigned'}</div></div>`).join('')
+    : '<div style="color:var(--muted);font-size:12px">All items have scores ✓</div>';
+}
+
+/* ════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════ */
+function openModal(id=null){
+  const d = id ? DATA.find(x=>x.id===id) : null;
+  document.getElementById('modal-title').textContent = d ? 'Edit RAID Item' : 'Add RAID Item';
+  document.getElementById('edit-id').value = d?.id||'';
+  document.getElementById('f-issue').value = d?.issue||'';
+  document.getElementById('f-type-m').value = d?.type||'Risk';
+  document.getElementById('f-severity-m').value = d?.severity||'High';
+  document.getElementById('f-mitigation').value = d?.mitigation||'';
+  document.getElementById('f-owner-m').value = d?.owner||'';
+  document.getElementById('f-due-m').value = d?.date_due||'';
+  document.getElementById('f-status-m').value = d?.status||'Open';
+  document.getElementById('f-priority-m').value = d?.priority||'High';
+  document.getElementById('f-initiated-m').value = d?.date_initiated||new Date().toISOString().split('T')[0];
+  document.getElementById('f-closed-m').value = d?.date_closed||'';
+  const imp = d?.impact||3, eff = d?.effort||3;
+  document.getElementById('f-impact-m').value = imp;
+  document.getElementById('impact-val').textContent = imp;
+  document.getElementById('f-effort-m').value = eff;
+  document.getElementById('effort-val').textContent = eff;
+  document.getElementById('f-notes-m').value = d?.notes||'';
+  document.getElementById('modal').classList.add('open');
+}
+
+function editItem(id){ openModal(id); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+async function saveItem(){
+  const id = document.getElementById('edit-id').value;
+  const payload = {
+    issue: document.getElementById('f-issue').value.trim(),
+    type: document.getElementById('f-type-m').value,
+    severity: document.getElementById('f-severity-m').value,
+    mitigation: document.getElementById('f-mitigation').value.trim(),
+    owner: document.getElementById('f-owner-m').value.trim(),
+    date_due: document.getElementById('f-due-m').value||null,
+    status: document.getElementById('f-status-m').value,
+    priority: document.getElementById('f-priority-m').value,
+    date_initiated: document.getElementById('f-initiated-m').value||null,
+    date_closed: document.getElementById('f-closed-m').value||null,
+    impact: +document.getElementById('f-impact-m').value,
+    effort: +document.getElementById('f-effort-m').value,
+    notes: document.getElementById('f-notes-m').value.trim(),
+    updated_at: new Date().toISOString()
+  };
+  if(!payload.issue){ alert('Issue description is required'); return; }
+  try {
+    if(id){
+      await sbFetch(`raid_items?id=eq.${id}`, 'PATCH', payload);
+      toast('Item updated ✓');
+    } else {
+      await sbFetch('raid_items', 'POST', payload);
+      toast('Item added ✓');
+    }
+    closeModal();
+    await loadData();
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+async function closeItem(id){
+  if(!confirm('Mark this item as Closed?')) return;
+  await sbFetch(`raid_items?id=eq.${id}`, 'PATCH', {status:'Closed', date_closed:new Date().toISOString().split('T')[0], updated_at:new Date().toISOString()});
+  toast('Item closed ✓');
+  await loadData();
+}
+
+async function deleteItem(id){
+  if(!confirm('Delete this item permanently?')) return;
+  await sbFetch(`raid_items?id=eq.${id}`, 'DELETE');
+  toast('Item deleted');
+  await loadData();
+}
+
+/* ════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════ */
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+document.getElementById('modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('live-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+
+
+/* ════════════════════════════════════════════
+   DAILY WINS
+════════════════════════════════════════════ */
+const EMP_COLORS = ['#052030','#1882C7','#0d6b8a','#B3A369','#2563eb','#7c3aed','#c2410c','#166534'];
+let WIN_PLAN = null;
+let WIN_ASSIGNMENTS = [];
+let EMPLOYEES = [];
+let COLLAPSED = {};
+
+async function initWins(){
+  // set today
+  document.getElementById('dw-date').value = todayISO();
+  // load employees
+  EMPLOYEES = await sbFetch('employees?active=eq.true&order=name');
+  populateAssigneeSelect();
+  populateRaidLinkSelect();
+  await loadWinPlan();
+}
+
+function todayISO(){
+  return new Date().toISOString().split('T')[0];
+}
+
+async function loadWinPlan(){
+  const date = document.getElementById('dw-date').value || todayISO();
+  // Get or create plan
+  let plans = await sbFetch(`daily_win_plans?plan_date=eq.${date}`);
+  if(!plans.length){
+    WIN_PLAN = await sbFetch('daily_win_plans','POST',{plan_date:date,win_statement:'',created_by:''});
+    WIN_PLAN = WIN_PLAN[0];
+  } else {
+    WIN_PLAN = plans[0];
+  }
+  document.getElementById('win-statement').value = WIN_PLAN?.win_statement || '';
+
+  // Load assignments
+  WIN_ASSIGNMENTS = await sbFetch(`daily_assignments?plan_id=eq.${WIN_PLAN.id}&order=sort_order,created_at`);
+  renderLanes();
+  updateScoreboard();
+  updateWinsCount();
+
+  // Hide EOD on date change
+  document.getElementById('eod-section').style.display='none';
+}
+
+async function saveWinStatement(){
+  if(!WIN_PLAN) return;
+  const val = document.getElementById('win-statement').value.trim();
+  await sbFetch(`daily_win_plans?id=eq.${WIN_PLAN.id}`, 'PATCH', {win_statement:val, updated_at:new Date().toISOString()});
+}
+
+/* ── LANES ── */
+function renderLanes(){
+  const container = document.getElementById('dw-lanes');
+  if(!WIN_ASSIGNMENTS.length){
+    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--muted);background:var(--white);border-radius:10px;border:2px dashed var(--border)">
+      <div style="font-size:32px;margin-bottom:10px">🏆</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">No tasks assigned yet</div>
+      <div style="font-size:13px">Click <strong>+ Assign Task</strong> to build today's plan and define how you win</div>
+    </div>`;
+    return;
+  }
+
+  // Group by assignee
+  const byEmp = {};
+  WIN_ASSIGNMENTS.forEach(a => {
+    const k = a.assignee || 'Unassigned';
+    if(!byEmp[k]) byEmp[k] = [];
+    byEmp[k].push(a);
+  });
+
+  container.innerHTML = Object.entries(byEmp).map(([emp, tasks], idx) => {
+    const done = tasks.filter(t=>t.status==='Complete').length;
+    const inprog = tasks.filter(t=>t.status==='In Progress').length;
+    const blocked = tasks.filter(t=>t.status==='Blocked').length;
+    const total = tasks.length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const color = EMP_COLORS[idx % EMP_COLORS.length];
+    const collapsed = COLLAPSED[emp] || false;
+    const initials = emp.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const empObj = EMPLOYEES.find(e=>e.name===emp);
+
+    return `<div class="emp-lane">
+      <div class="emp-lane-head" onclick="toggleLane('${emp}')">
+        <div class="emp-avatar" style="background:${color}">${initials}</div>
+        <div>
+          <div class="emp-name">${esc(emp)}</div>
+          <div class="emp-role">${empObj?.department||''} ${empObj?.role?'· '+empObj.role:''}</div>
+        </div>
+        <div class="emp-lane-stats">
+          ${done?`<span class="emp-stat emp-stat-done">✓ ${done} done</span>`:''}
+          ${inprog?`<span class="emp-stat emp-stat-prog">⟳ ${inprog}</span>`:''}
+          ${blocked?`<span class="emp-stat emp-stat-open">⚠ ${blocked} blocked</span>`:''}
+          <div>
+            <div class="emp-mini-bar"><div class="emp-mini-fill${pct===100?' done':''}" style="width:${pct}%"></div></div>
+            <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px">${pct}%</div>
+          </div>
+          <span style="font-size:16px;color:var(--muted);margin-left:4px">${collapsed?'▶':'▼'}</span>
+        </div>
+      </div>
+      <div class="lane-tasks${collapsed?' collapsed':''}" id="lane-${slugify(emp)}">
+        ${tasks.sort((a,b)=>(priorityOrder(a.priority)-priorityOrder(b.priority))).map(t=>renderTaskCard(t)).join('')}
+        <div class="add-task-row">
+          <button class="add-task-btn" onclick="openAssignModal(null,'${esc(emp)}')">+ Add another task for ${esc(emp)}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTaskCard(t){
+  const statusIcon = t.status==='Complete'?'✓':t.status==='In Progress'?'⟳':t.status==='Blocked'?'!':'';
+  const statusClass = t.status==='Complete'?'complete':t.status==='In Progress'?'inprogress':t.status==='Blocked'?'blocked':'';
+  const cardClass = t.status==='Complete'?'status-complete':t.status==='In Progress'?'status-inprogress':t.status==='Blocked'?'status-blocked':'';
+  const priCol = {Critical:'var(--crit-c)',High:'var(--high-c)',Medium:'var(--med-c)',Low:'var(--low-c)'}[t.priority]||'var(--muted)';
+
+  return `<div class="task-card ${cardClass}" id="task-${t.id}">
+    <div class="task-status-btn ${statusClass}" onclick="cycleTaskStatus('${t.id}',event)" title="Click to cycle status">${statusIcon}</div>
+    <div class="task-body">
+      <div class="task-title">${esc(t.task_title)}</div>
+      <div class="task-meta">
+        <span class="badge badge-${(t.category||'action').toLowerCase()}" style="font-size:9px">${t.category||'Action'}</span>
+        <span style="font-size:10px;font-weight:700;color:${priCol}">${t.priority}</span>
+        ${t.target_completion?`<span class="task-target">🕐 ${esc(t.target_completion)}</span>`:''}
+        ${t.task_notes?`<span style="font-size:11px;color:var(--muted);font-style:italic">${esc(t.task_notes)}</span>`:''}
+      </div>
+      <div class="task-actions-row">
+        <button class="t-act" onclick="editAssignment('${t.id}',event)">Edit</button>
+        <button class="t-act danger" onclick="deleteAssignment('${t.id}',event)">Remove</button>
+      </div>
+    </div>
+    <span class="badge badge-${t.status==='Complete'?'closed':t.status==='In Progress'?'inprogress':'open'}" style="font-size:9px;flex-shrink:0;align-self:flex-start">${t.status}</span>
+  </div>`;
+}
+
+function toggleLane(emp){
+  COLLAPSED[emp] = !COLLAPSED[emp];
+  renderLanes();
+}
+
+function slugify(s){ return s.replace(/[^a-zA-Z0-9]/g,'-'); }
+function priorityOrder(p){ return {Critical:0,High:1,Medium:2,Low:3}[p]??99; }
+
+/* ── SCOREBOARD ── */
+function updateScoreboard(){
+  const total = WIN_ASSIGNMENTS.length;
+  const done = WIN_ASSIGNMENTS.filter(t=>t.status==='Complete').length;
+  const inprog = WIN_ASSIGNMENTS.filter(t=>t.status==='In Progress').length;
+  const blocked = WIN_ASSIGNMENTS.filter(t=>t.status==='Blocked').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  document.getElementById('sb-complete').textContent = done;
+  document.getElementById('sb-inprog').textContent = inprog;
+  document.getElementById('sb-blocked').textContent = blocked;
+  document.getElementById('sb-total').textContent = total;
+  document.getElementById('sb-ring-pct').textContent = pct+'%';
+
+  const circ = 176;
+  document.getElementById('sb-ring-fill').setAttribute('stroke-dashoffset', circ - (circ*pct/100));
+
+  const sb = document.getElementById('scoreboard');
+  if(!total){
+    sb.className='scoreboard neutral';
+    document.getElementById('sb-verdict').textContent="Today's Plan";
+    document.getElementById('sb-sub').textContent='Add tasks to define how you win today';
+  } else if(pct===100){
+    sb.className='scoreboard winning';
+    document.getElementById('sb-verdict').textContent='🏆 WE WON TODAY!';
+    document.getElementById('sb-sub').textContent=`All ${total} tasks complete — outstanding execution`;
+    document.getElementById('sb-ring-fill').setAttribute('stroke','#4ade80');
+  } else if(pct>=75){
+    sb.className='scoreboard winning';
+    document.getElementById('sb-verdict').textContent='✅ WINNING';
+    document.getElementById('sb-sub').textContent=`${done}/${total} complete — strong day, keep pushing`;
+    document.getElementById('sb-ring-fill').setAttribute('stroke','#4ade80');
+  } else if(pct>=40 || inprog>0){
+    sb.className='scoreboard neutral';
+    document.getElementById('sb-verdict').textContent='⟳ IN THE FIGHT';
+    document.getElementById('sb-sub').textContent=`${done}/${total} complete — stay focused`;
+    document.getElementById('sb-ring-fill').setAttribute('stroke','#60a5fa');
+  } else if(blocked>0){
+    sb.className='scoreboard losing';
+    document.getElementById('sb-verdict').textContent='⚠ BLOCKERS PRESENT';
+    document.getElementById('sb-sub').textContent=`${blocked} task(s) blocked — escalate now`;
+    document.getElementById('sb-ring-fill').setAttribute('stroke','#f97316');
+  } else {
+    sb.className='scoreboard losing';
+    document.getElementById('sb-verdict').textContent='❌ BEHIND PLAN';
+    document.getElementById('sb-sub').textContent=`${done}/${total} complete — needs attention`;
+    document.getElementById('sb-ring-fill').setAttribute('stroke','#f87171');
+  }
+}
+
+function updateWinsCount(){
+  const open = WIN_ASSIGNMENTS.filter(t=>t.status!=='Complete').length;
+  document.getElementById('wins-count').textContent = open || WIN_ASSIGNMENTS.length || '—';
+}
+
+/* ── CYCLE STATUS ── */
+const STATUS_CYCLE = ['Not Started','In Progress','Complete','Blocked'];
+async function cycleTaskStatus(id, e){
+  e.stopPropagation();
+  const t = WIN_ASSIGNMENTS.find(a=>a.id===id);
+  if(!t) return;
+  const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(t.status)+1)%STATUS_CYCLE.length];
+  const patch = {status:next, updated_at:new Date().toISOString()};
+  if(next==='Complete') patch.completed_at = new Date().toISOString();
+  else patch.completed_at = null;
+  await sbFetch(`daily_assignments?id=eq.${id}`, 'PATCH', patch);
+  t.status = next;
+  if(next==='Complete') t.completed_at = patch.completed_at;
+  renderLanes();
+  updateScoreboard();
+  updateWinsCount();
+  toast(next==='Complete'?'✓ Task complete!':next==='In Progress'?'⟳ Marked in progress':next==='Blocked'?'⚠ Marked as blocked':'↩ Reset to not started');
+}
+
+/* ── ASSIGN MODAL ── */
+function populateAssigneeSelect(){
+  const sel = document.getElementById('a-assignee');
+  const cur = sel.value;
+  sel.innerHTML='<option value="">Select employee…</option>';
+  EMPLOYEES.forEach(e=>{
+    const opt = document.createElement('option');
+    opt.value = e.name; opt.textContent = e.name+(e.department?' ('+e.department+')':'');
+    if(e.name===cur) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  // also add free-type option
+  const opt2 = document.createElement('option');
+  opt2.value='__new__'; opt2.textContent='+ Add new employee…';
+  sel.appendChild(opt2);
+}
+
+function populateRaidLinkSelect(){
+  const sel = document.getElementById('a-raid-link');
+  sel.innerHTML='<option value="">— Standalone task —</option>';
+  DATA.filter(d=>d.status!=='Closed').forEach(d=>{
+    const opt = document.createElement('option');
+    opt.value=d.id;
+    opt.textContent=`[${d.type}] ${d.issue.substring(0,60)}${d.issue.length>60?'…':''}`;
+    sel.appendChild(opt);
+  });
+}
+
+function openAssignModal(id=null, preAssignee=null){
+  document.getElementById('assign-modal-title').textContent = id ? 'Edit Assignment' : 'Assign Task';
+  document.getElementById('a-edit-id').value = id||'';
+  if(id){
+    const t = WIN_ASSIGNMENTS.find(a=>a.id===id);
+    if(t){
+      document.getElementById('a-title').value = t.task_title||'';
+      document.getElementById('a-raid-link').value = t.raid_item_id||'';
+      document.getElementById('a-assignee').value = t.assignee||'';
+      document.getElementById('a-priority').value = t.priority||'High';
+      document.getElementById('a-category').value = t.category||'Action';
+      document.getElementById('a-target').value = t.target_completion||'';
+      document.getElementById('a-status').value = t.status||'Not Started';
+      document.getElementById('a-notes').value = t.task_notes||'';
+    }
+  } else {
+    document.getElementById('a-title').value='';
+    document.getElementById('a-raid-link').value='';
+    document.getElementById('a-assignee').value = preAssignee||'';
+    document.getElementById('a-priority').value='High';
+    document.getElementById('a-category').value='Action';
+    document.getElementById('a-target').value='EOD';
+    document.getElementById('a-status').value='Not Started';
+    document.getElementById('a-notes').value='';
+    // pre-fill title from RAID link if selected
+    document.getElementById('a-raid-link').onchange = function(){
+      const item = DATA.find(d=>d.id===this.value);
+      if(item && !document.getElementById('a-title').value){
+        document.getElementById('a-title').value = item.issue;
+        document.getElementById('a-category').value = item.type||'Action';
+        document.getElementById('a-priority').value = item.priority||'High';
+      }
+    };
+  }
+  document.getElementById('assign-modal').classList.add('open');
+}
+
+function editAssignment(id, e){ e.stopPropagation(); openAssignModal(id); }
+
+function closeAssignModal(){ document.getElementById('assign-modal').classList.remove('open'); }
+
+async function saveAssignment(){
+  const id = document.getElementById('a-edit-id').value;
+  let assignee = document.getElementById('a-assignee').value;
+  if(assignee==='__new__'){
+    assignee = prompt('Enter employee name:');
+    if(!assignee) return;
+    // add to employees table
+    await sbFetch('employees','POST',{name:assignee.trim(),department:'',role:'',active:true});
+    EMPLOYEES = await sbFetch('employees?active=eq.true&order=name');
+    populateAssigneeSelect();
+  }
+  if(!assignee){ alert('Please select an employee'); return; }
+  const title = document.getElementById('a-title').value.trim();
+  if(!title){ alert('Task title is required'); return; }
+  if(!WIN_PLAN){ alert('No active plan. Please select a date first.'); return; }
+
+  const payload = {
+    plan_id: WIN_PLAN.id,
+    raid_item_id: document.getElementById('a-raid-link').value || null,
+    task_title: title,
+    task_notes: document.getElementById('a-notes').value.trim(),
+    assignee,
+    priority: document.getElementById('a-priority').value,
+    category: document.getElementById('a-category').value,
+    target_completion: document.getElementById('a-target').value.trim(),
+    status: document.getElementById('a-status').value,
+    updated_at: new Date().toISOString()
+  };
+
+  if(id){
+    await sbFetch(`daily_assignments?id=eq.${id}`, 'PATCH', payload);
+    toast('Assignment updated ✓');
+  } else {
+    await sbFetch('daily_assignments', 'POST', payload);
+    toast('Task assigned ✓');
+  }
+  closeAssignModal();
+  WIN_ASSIGNMENTS = await sbFetch(`daily_assignments?plan_id=eq.${WIN_PLAN.id}&order=sort_order,created_at`);
+  renderLanes();
+  updateScoreboard();
+  updateWinsCount();
+}
+
+async function deleteAssignment(id, e){
+  e.stopPropagation();
+  if(!confirm('Remove this task?')) return;
+  await sbFetch(`daily_assignments?id=eq.${id}`, 'DELETE');
+  WIN_ASSIGNMENTS = WIN_ASSIGNMENTS.filter(a=>a.id!==id);
+  renderLanes();
+  updateScoreboard();
+  updateWinsCount();
+  toast('Task removed');
+}
+
+/* ── EOD REPORT ── */
+function renderEOD(){
+  const section = document.getElementById('eod-section');
+  section.style.display='block';
+  section.scrollIntoView({behavior:'smooth', block:'start'});
+
+  const total = WIN_ASSIGNMENTS.length;
+  const done = WIN_ASSIGNMENTS.filter(t=>t.status==='Complete').length;
+  const inprog = WIN_ASSIGNMENTS.filter(t=>t.status==='In Progress').length;
+  const blocked = WIN_ASSIGNMENTS.filter(t=>t.status==='Blocked').length;
+  const notStarted = WIN_ASSIGNMENTS.filter(t=>t.status==='Not Started').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  // KPIs
+  const winColor = pct>=75?'#16a34a':pct>=40?'#1882C7':'#dc2626';
+  const verdict = pct===100?'🏆 WE WON':pct>=75?'✅ WIN':pct>=40?'⟳ PARTIAL':'❌ LOSS';
+  document.getElementById('eod-kpis').innerHTML = `
+    <div class="eod-stat" style="border-top:3px solid ${winColor}">
+      <div class="eod-val" style="color:${winColor}">${verdict}</div>
+      <div class="eod-lbl">${pct}% Complete</div>
+    </div>
+    <div class="eod-stat" style="border-top:3px solid #16a34a">
+      <div class="eod-val" style="color:#16a34a">${done}</div>
+      <div class="eod-lbl">Tasks Complete</div>
+    </div>
+    <div class="eod-stat" style="border-top:3px solid #dc2626">
+      <div class="eod-val" style="color:#dc2626">${notStarted+blocked}</div>
+      <div class="eod-lbl">Not Done</div>
+    </div>
+    <div class="eod-stat" style="border-top:3px solid #ea580c">
+      <div class="eod-val" style="color:#ea580c">${blocked}</div>
+      <div class="eod-lbl">Blocked</div>
+    </div>`;
+
+  // Completed tasks
+  const comp = WIN_ASSIGNMENTS.filter(t=>t.status==='Complete');
+  document.getElementById('eod-completed').innerHTML = comp.length
+    ? comp.map(t=>`<div class="closed-item">
+        <div class="closed-check">✓</div>
+        <div><div class="closed-issue">${esc(t.task_title)}</div>
+        <div class="closed-meta"><span>${esc(t.assignee)}</span>${t.task_notes?`<span style="font-style:italic">${esc(t.task_notes)}</span>`:''}</div></div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:12px 0">No completed tasks yet</div>';
+
+  // Incomplete
+  const incomp = WIN_ASSIGNMENTS.filter(t=>t.status!=='Complete');
+  document.getElementById('eod-incomplete').innerHTML = incomp.length
+    ? incomp.map(t=>`<div class="closed-item">
+        <div style="width:22px;height:22px;border-radius:50%;background:${t.status==='Blocked'?'#fee2e2':'#fef3c7'};border:2px solid ${t.status==='Blocked'?'#dc2626':'#d97706'};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px">${t.status==='Blocked'?'⚠':'○'}</div>
+        <div><div class="closed-issue">${esc(t.task_title)}</div>
+        <div class="closed-meta"><span>${esc(t.assignee)}</span><span class="badge badge-${t.status==='Blocked'?'high':'medium'}">${t.status}</span></div></div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:12px 0">All tasks complete! 🏆</div>';
+
+  // By employee
+  const byEmp = {};
+  WIN_ASSIGNMENTS.forEach(t=>{
+    const k=t.assignee||'Unassigned';
+    if(!byEmp[k]) byEmp[k]={done:0,total:0};
+    byEmp[k].total++;
+    if(t.status==='Complete') byEmp[k].done++;
+  });
+  document.getElementById('eod-by-emp').innerHTML = Object.entries(byEmp)
+    .sort((a,b)=>(b[1].done/b[1].total)-(a[1].done/a[1].total))
+    .map(([emp,{done,total}])=>{
+      const p=Math.round(done/total*100);
+      const c=p>=75?'#16a34a':p>=40?'#1882C7':'#dc2626';
+      return `<div class="eod-emp-row">
+        <div class="eod-emp-name">${esc(emp)}</div>
+        <div class="eod-bar-track"><div class="eod-bar-fill" style="width:${p}%;background:${c}"></div></div>
+        <div class="eod-emp-pct" style="color:${c}">${p}%</div>
+        <div style="font-size:11px;color:var(--muted);width:60px;text-align:right">${done}/${total} done</div>
+      </div>`;
+    }).join('');
+}
+
+// Close assign modal on bg click
+document.getElementById('assign-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeAssignModal(); });
+
+// Boot
+loadData();
+setInterval(loadData, 120000); // poll every 2 min
+</script>
+
+<!-- Mobile FAB -->
+<button class="mobile-fab" id="mobile-fab" onclick="mobileFabAction()" style="display:none" aria-label="Add item">+</button>
+
+<!-- Service Worker registration -->
+<script>
+// Service worker registration handled by PWA deployment only
+
+// Show FAB on mobile tabs that need it
+function updateMobileFab() {
+  const fab = document.getElementById('mobile-fab');
+  if (!fab) return;
+  const isMobile = window.innerWidth <= 768;
+  const tab = document.querySelector('.nav-tab.active');
+  const tabText = tab ? tab.textContent : '';
+  fab.style.display = (isMobile && (tabText.includes('RAID') || tabText.includes('Wins'))) ? 'flex' : 'none';
+}
+
+function mobileFabAction() {
+  const tab = document.querySelector('.nav-tab.active');
+  if (!tab) return;
+  if (tab.textContent.includes('RAID')) openModal();
+  else if (tab.textContent.includes('Wins')) openAssignModal();
+}
+
+// Patch setTab to also update FAB on mobile
+const _origSetTab = typeof setTab === 'function' ? setTab : null;
+window._mobileTabHook = function() { setTimeout(updateMobileFab, 50); };
+
+window.addEventListener('resize', updateMobileFab);
+window.addEventListener('load', updateMobileFab);
+
+/* ══ OTD TRACKER ══ */
+const OTD_OPS = ["DBTH - Case Entry", "DBTH - Case Review", "Place Parts", "Design Outsource", "Design QC", "Design Changes", "Design Bar", "Milling CAM - Bar", "Milling CAM - Arches", "Sintering", "Shape and Colorize", "Bar Cementing", "Finishing PMMA", "Finishing Zirc", "Final QC", "Case Coordination"];
+let otdDate = new Date().toISOString().split('T')[0];
+let otdRows = {};
+let otdInited = false;
+
+function otdFmt(d) {
+  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function otdSlug(op) { return op.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+async function initOTD() {
+  if (!otdInited) { otdInited = true; buildOTDCards(); }
+  document.getElementById('otd-pick').value = otdDate;
+  document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
+  await loadOTD();
+}
+
+function otdNav(delta) {
+  const d = new Date(otdDate+'T12:00:00'); d.setDate(d.getDate()+delta);
+  otdDate = d.toISOString().split('T')[0];
+  document.getElementById('otd-pick').value = otdDate;
+  document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
+  loadOTD();
+}
+function otdPick() {
+  otdDate = document.getElementById('otd-pick').value;
+  document.getElementById('otd-lbl').textContent = otdFmt(otdDate);
+  loadOTD();
+}
+
+async function loadOTD() {
+  try {
+    const data = await sbFetch('otd_entries?entry_date=eq.'+otdDate+'&order=operation');
+    otdRows = {};
+    data.forEach(r => otdRows[r.operation] = r);
+    fillCards(); renderOTDTable(); updateOTDKPIs();
+  } catch(e) { console.error('OTD load',e); }
+}
+
+function buildOTDCards() {
+  const g = document.getElementById('otd-cards');
+  if (!g) return;
+  g.innerHTML = OTD_OPS.map(op => {
+    const s = otdSlug(op);
+    return `<div class="otd-card" id="otd-c-${s}">
+      <div class="otd-card-hd">
+        <div class="otd-card-name">${op}</div>
+        <div class="otd-pill empty" id="otd-p-${s}">—</div>
+      </div>
+      <div class="otd-card-body">
+        <div class="otd-field">
+          <div class="otd-flbl">Supervisor</div>
+          <input class="otd-inp" id="otd-sup-${s}" type="text" placeholder="Name…">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">Units Planned</div>
+          <input class="otd-inp" id="otd-pln-${s}" type="number" min="0" placeholder="0" oninput="otdCalc('${s}')">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">Units Actual</div>
+          <input class="otd-inp" id="otd-act-${s}" type="number" min="0" placeholder="0" oninput="otdCalc('${s}')">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">Late Cases</div>
+          <input class="otd-inp" id="otd-lat-${s}" type="number" min="0" placeholder="0" oninput="otdCalc('${s}')">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">Remakes</div>
+          <input class="otd-inp" id="otd-rmk-${s}" type="number" min="0" placeholder="0">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">OTD %</div>
+          <input class="otd-inp ro" id="otd-pct-${s}" type="text" readonly value="—">
+        </div>
+        <div class="otd-field full">
+          <div class="otd-flbl">Notes / Reason for Miss</div>
+          <input class="otd-inp" id="otd-nts-${s}" type="text" placeholder="Context…">
+        </div>
+      </div>
+      <div class="otd-card-ft">
+        <button class="otd-save" onclick="saveOTD('${op}')">Save</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fillCards() {
+  OTD_OPS.forEach(op => {
+    const s = otdSlug(op), d = otdRows[op] || {};
+    const g = id => document.getElementById(id);
+    if(g(`otd-sup-${s}`)) g(`otd-sup-${s}`).value = d.supervisor || '';
+    if(g(`otd-pln-${s}`)) g(`otd-pln-${s}`).value = d.units_planned ?? '';
+    if(g(`otd-act-${s}`)) g(`otd-act-${s}`).value = d.units_actual ?? '';
+    if(g(`otd-lat-${s}`)) g(`otd-lat-${s}`).value = d.late_count ?? '';
+    if(g(`otd-rmk-${s}`)) g(`otd-rmk-${s}`).value = d.remake_count ?? '';
+    if(g(`otd-nts-${s}`)) g(`otd-nts-${s}`).value = d.notes || '';
+    otdCalc(s);
+  });
+}
+
+function otdCalc(s) {
+  const v = id => parseFloat(document.getElementById(id)?.value) || 0;
+  const pln = v(`otd-pln-${s}`), act = v(`otd-act-${s}`), lat = v(`otd-lat-${s}`);
+  let pct = null;
+  if (pln > 0) pct = Math.max(0, Math.round((pln - lat) / pln * 100));
+  else if (act > 0) pct = Math.max(0, Math.round((act - lat) / act * 100));
+  const pctEl = document.getElementById(`otd-pct-${s}`);
+  const pillEl = document.getElementById(`otd-p-${s}`);
+  if (!pctEl || !pillEl) return;
+  if (pct === null) { pctEl.value = '—'; pillEl.textContent = '—'; pillEl.className = 'otd-pill empty'; return; }
+  pctEl.value = pct + '%';
+  pillEl.textContent = pct + '%';
+  pillEl.className = 'otd-pill' + (pct >= 95 ? '' : pct >= 80 ? ' warn' : ' danger');
+}
+
+async function saveOTD(op) {
+  const s = otdSlug(op);
+  const g = id => document.getElementById(id);
+  const payload = {
+    entry_date: otdDate, operation: op,
+    supervisor: g(`otd-sup-${s}`)?.value.trim() || null,
+    units_planned: parseInt(g(`otd-pln-${s}`)?.value) || null,
+    units_actual:  parseInt(g(`otd-act-${s}`)?.value) || null,
+    late_count:    parseInt(g(`otd-lat-${s}`)?.value) || 0,
+    remake_count:  parseInt(g(`otd-rmk-${s}`)?.value) || 0,
+    notes: g(`otd-nts-${s}`)?.value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const ex = otdRows[op];
+    if (ex) await sbFetch(`otd_entries?id=eq.${ex.id}`,'PATCH',payload);
+    else { const r = await sbFetch('otd_entries','POST',payload); if(r?.[0]) otdRows[op]=r[0]; }
+    const btn = g(`otd-c-${s}`)?.querySelector('.otd-save');
+    if (btn) { btn.textContent='✓ Saved'; btn.classList.add('ok'); setTimeout(()=>{btn.textContent='Save';btn.classList.remove('ok');},1800); }
+    await loadOTD(); toast('Saved: '+op);
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+function renderOTDTable() {
+  const tb = document.getElementById('otd-tbl');
+  if (!tb) return;
+  tb.innerHTML = OTD_OPS.map(op => {
+    const d = otdRows[op] || {};
+    const pln = d.units_planned || null, act = d.units_actual || null;
+    const lat = d.late_count || 0, rmk = d.remake_count || 0;
+    let pct = null;
+    if (pln > 0) pct = Math.max(0, Math.round((pln - lat) / pln * 100));
+    else if (act > 0) pct = Math.max(0, Math.round((act - lat) / act * 100));
+    const c = pct === null ? '#aaa' : pct >= 95 ? '#16a34a' : pct >= 80 ? '#d97706' : '#dc2626';
+    return `<tr>
+      <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(op)}</td>
+      <td style="text-align:center">${pln ?? '—'}</td>
+      <td style="text-align:center">${act ?? '—'}</td>
+      <td style="text-align:center;color:${lat>0?'#dc2626':'var(--muted)'};font-weight:${lat>0?700:400}">${lat}</td>
+      <td style="text-align:center;color:${rmk>0?'#d97706':'var(--muted)'}">${rmk}</td>
+      <td style="font-weight:800;color:${c}">${pct!==null?pct+'%':'—'}</td>
+      <td><div class="otd-bar-wrap"><div class="otd-bar-fill" style="width:${pct??0}%;background:${c}"></div></div></td>
+      <td style="font-size:12px">${esc(d.supervisor||'—')}</td>
+      <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:150px">${esc(d.notes||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateOTDKPIs() {
+  const all = Object.values(otdRows);
+  const totalLate = all.reduce((s,e)=>s+(e.late_count||0),0);
+  const totalRmk  = all.reduce((s,e)=>s+(e.remake_count||0),0);
+  const pcts = all.filter(e=>(e.units_planned||0)>0||(e.units_actual||0)>0).map(e => {
+    const p=e.units_planned||0, l=e.late_count||0, a=e.units_actual||0;
+    return p>0 ? Math.max(0,(p-l)/p*100) : Math.max(0,(a-l)/a*100);
+  });
+  const avg = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : null;
+  const onTime = pcts.filter(p=>p>=95).length;
+  const g = id => document.getElementById(id);
+  if(g('otd-k-otd')) g('otd-k-otd').textContent = avg!==null ? avg+'%' : '—';
+  if(g('otd-k-on'))  g('otd-k-on').textContent  = pcts.length ? onTime : '—';
+  if(g('otd-k-late'))g('otd-k-late').textContent = totalLate;
+  if(g('otd-k-rmk')) g('otd-k-rmk').textContent = totalRmk;
+  const bdg = document.getElementById('otd-badge');
+  if (bdg) bdg.textContent = pcts.length || '—';
+}
+
+function otdExport() {
+  const rows = [['Date','Operation','Supervisor','Planned','Actual','Late','Remakes','OTD%','Notes']];
+  OTD_OPS.forEach(op => {
+    const d = otdRows[op] || {};
+    const p=d.units_planned||0, l=d.late_count||0, a=d.units_actual||0;
+    let pct=''; if(p>0)pct=Math.max(0,Math.round((p-l)/p*100))+'%'; else if(a>0)pct=Math.max(0,Math.round((a-l)/a*100))+'%';
+    rows.push([otdDate,op,d.supervisor||'',d.units_planned||'',d.units_actual||'',l,d.remake_count||0,pct,d.notes||'']);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='OTD_'+otdDate+'.csv'; a.click(); toast('CSV exported ✓');
+}
+
+
+</script>
+
+
+
+</body></html>
