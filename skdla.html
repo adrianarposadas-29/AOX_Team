@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKDLA Performance Management — Full Arch Business Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script>
+/* ════════════════════════════════════════════════════════════
+   Built-in .xlsx parser — no external library required.
+   Uses DecompressionStream('deflate-raw') (ZIP inflate) + DOMParser.
+   Supported in modern Chrome/Edge/Safari/Firefox.
+════════════════════════════════════════════════════════════ */
+async function readZipEntries(buffer) {
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const td = new TextDecoder('utf-8');
+  const out = {};
+  const total = view.byteLength;
+  let off = 0;
+  while (off < total - 4) {
+    const sig = view.getUint32(off, true);
+    if (sig !== 0x04034b50) break;            // not a local file header
+    const flags     = view.getUint16(off + 6, true);
+    const method    = view.getUint16(off + 8, true);
+    let compSize    = view.getUint32(off + 18, true);
+    let uncompSize  = view.getUint32(off + 22, true);
+    const nameLen   = view.getUint16(off + 26, true);
+    const extraLen  = view.getUint16(off + 28, true);
+    const name = td.decode(bytes.slice(off + 30, off + 30 + nameLen));
+    let dataStart = off + 30 + nameLen + extraLen;
+
+    // streamed entries (bit 3 of flags) put sizes in a trailing data descriptor
+    if ((flags & 0x0008) && (compSize === 0 || uncompSize === 0)) {
+      let p = dataStart;
+      while (p < total - 16) {
+        if (view.getUint32(p, true) === 0x08074b50) {
+          compSize   = view.getUint32(p + 8, true);
+          uncompSize = view.getUint32(p + 12, true);
+          break;
+        }
+        p++;
+      }
+    }
+
+    const compressed = bytes.slice(dataStart, dataStart + compSize);
+    let data;
+    if (method === 0) {
+      data = compressed;
+    } else if (method === 8) {
+      const ds = new DecompressionStream('deflate-raw');
+      const r = new Response(new Blob([compressed]).stream().pipeThrough(ds));
+      data = new Uint8Array(await r.arrayBuffer());
+    } else {
+      throw new Error('Unsupported zip compression method: ' + method);
+    }
+    out[name] = data;
+
+    off = dataStart + compSize;
+    if (flags & 0x0008) off += 16; // skip the data descriptor that follows
+  }
+  return out;
+}
+
+function colLettersToIndex(letters) {
+  let n = 0;
+  for (let i = 0; i < letters.length; i++) n = n * 26 + (letters.charCodeAt(i) - 64);
+  return n - 1;
+}
+
+async function readXLSXFile(buffer) {
+  const files = await readZipEntries(buffer);
+  const td = new TextDecoder('utf-8');
+  const parser = new DOMParser();
+
+  // shared strings
+  const sharedStrings = [];
+  if (files['xl/sharedStrings.xml']) {
+    const doc = parser.parseFromString(td.decode(files['xl/sharedStrings.xml']), 'text/xml');
+    const sis = doc.getElementsByTagName('si');
+    for (let i = 0; i < sis.length; i++) {
+      // collect all <t> descendants (handles plain + rich text)
+      const ts = sis[i].getElementsByTagName('t');
+      let s = '';
+      for (let j = 0; j < ts.length; j++) s += ts[j].textContent;
+      sharedStrings.push(s);
+    }
+  }
+
+  // pick first sheet path
+  let sheetPath = null;
+  for (const k of Object.keys(files)) {
+    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(k)) {
+      if (!sheetPath || k < sheetPath) sheetPath = k;
+    }
+  }
+  if (!sheetPath) throw new Error('No worksheet found in this .xlsx file.');
+
+  // sheet name from workbook.xml
+  let sheetName = 'Sheet1';
+  if (files['xl/workbook.xml']) {
+    const wb = parser.parseFromString(td.decode(files['xl/workbook.xml']), 'text/xml');
+    const sheets = wb.getElementsByTagName('sheet');
+    if (sheets.length) sheetName = sheets[0].getAttribute('name') || sheetName;
+  }
+
+  // parse rows
+  const sheetDoc = parser.parseFromString(td.decode(files[sheetPath]), 'text/xml');
+  const xmlRows = sheetDoc.getElementsByTagName('row');
+  const rows = [];
+  for (let r = 0; r < xmlRows.length; r++) {
+    const cells = xmlRows[r].getElementsByTagName('c');
+    const arr = [];
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i];
+      const ref = c.getAttribute('r') || '';
+      const m = ref.match(/^([A-Z]+)/);
+      const colIdx = m ? colLettersToIndex(m[1]) : i;
+      const t = c.getAttribute('t');
+      let val = null;
+      if (t === 'inlineStr') {
+        const is = c.getElementsByTagName('is')[0];
+        if (is) {
+          const ts = is.getElementsByTagName('t');
+          val = '';
+          for (let j = 0; j < ts.length; j++) val += ts[j].textContent;
+        }
+      } else {
+        const v = c.getElementsByTagName('v')[0];
+        if (v) {
+          const raw = v.textContent;
+          if (t === 's') val = sharedStrings[parseInt(raw, 10)] || '';
+          else if (t === 'b') val = raw === '1';
+          else if (t === 'str' || t === 'e') val = raw;
+          else if (raw !== '') {
+            const num = parseFloat(raw);
+            val = isNaN(num) ? raw : num;
+          } else val = null;
+        }
+      }
+      while (arr.length <= colIdx) arr.push(null);
+      arr[colIdx] = val;
+    }
+    rows.push(arr);
+  }
+
+  return { sheetName, rows };
+}
+</script>
+<style>
+:root{
+  --spectrum-blue:#052030;
+  --killian-blue:#1882C7;
+  --lab-gold:#B3A369;
+  --alliance-blue:#C3E8FA;
+  --white:#ffffff;
+  --off-white:#f4f7fb;
+  --border:#dbe4ef;
+  --muted:#5a7089;
+  --text:#1a2332;
+  --shadow:0 2px 8px rgba(5,32,48,.10);
+  --shadow-lg:0 8px 32px rgba(5,32,48,.16);
+  --r:8px;
+
+  --green:#16a34a;
+  --green-bg:#dcfce7;
+  --amber:#d97706;
+  --amber-bg:#fff7ed;
+  --red:#dc2626;
+  --red-bg:#fee2e2;
+  --red-row:#fff1f2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white);color:var(--text);font-size:14px}
+
+.topbar{
+  background:var(--spectrum-blue);
+  color:var(--white);
+  padding:14px 24px;
+  display:flex;align-items:center;gap:14px;
+}
+.logo-circle{
+  width:36px;height:36px;border-radius:50%;background:var(--lab-gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--spectrum-blue);font-size:18px;
+}
+.logo-text{display:flex;flex-direction:column;line-height:1}
+.brand{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
+.brand-sub{font-size:11px;font-weight:500;color:rgba(255,255,255,.65);margin-top:2px}
+.topbar-title{font-size:15px;font-weight:600;flex:1;margin-left:12px}
+
+.container{max-width:1400px;margin:0 auto;padding:24px}
+
+/* ─── Upload zone ─── */
+.upload-zone{
+  background:var(--white);
+  border:2px dashed var(--killian-blue);
+  border-radius:var(--r);
+  padding:34px 24px;
+  text-align:center;
+  margin-bottom:24px;
+  transition:all .2s;
+  cursor:pointer;
+}
+.upload-zone:hover, .upload-zone.dragover{
+  background:#eaf4fc;
+  border-color:var(--spectrum-blue);
+}
+.upload-zone .icon{font-size:36px;margin-bottom:8px}
+.upload-zone .title{font-size:16px;font-weight:700;color:var(--spectrum-blue);margin-bottom:4px}
+.upload-zone .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+.upload-zone .file-btn{
+  display:inline-block;
+  background:var(--killian-blue);color:var(--white);
+  padding:8px 18px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;
+}
+.upload-zone .file-btn:hover{background:#1470ac}
+
+.uploaded-info{
+  background:#dcfce7;color:#166534;
+  padding:10px 16px;border-radius:6px;font-size:13px;font-weight:600;
+  margin-bottom:16px;display:none;align-items:center;gap:10px;
+}
+.uploaded-info.show{display:flex}
+.uploaded-info .change-btn{
+  margin-left:auto;background:transparent;border:1px solid #166534;color:#166534;
+  padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;
+}
+
+/* ─── Header strip ─── */
+.report-hero{
+  background:var(--spectrum-blue);
+  color:var(--white);
+  border-radius:var(--r);
+  padding:18px 22px;
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  display:none;
+}
+.report-hero.show{display:flex}
+.report-hero .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.6);margin-bottom:4px}
+.report-hero .name{font-size:18px;font-weight:800}
+.report-hero .meta{margin-left:auto;display:flex;gap:18px;align-items:center}
+.report-hero .meta-item{display:flex;flex-direction:column;align-items:center}
+.report-hero .meta-item .v{font-size:18px;font-weight:800;color:var(--lab-gold)}
+.report-hero .meta-item .l{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em}
+
+.export-btn{
+  background:var(--lab-gold);color:var(--spectrum-blue);
+  border:none;padding:8px 16px;border-radius:6px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;
+}
+.export-btn:hover{filter:brightness(.95)}
+
+/* ─── KPI cards ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.kpi-card{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;box-shadow:var(--shadow);
+  border-top:3px solid var(--killian-blue);text-align:center;
+}
+.kpi-card.green{border-top-color:var(--green)}
+.kpi-card.red{border-top-color:var(--red)}
+.kpi-card.gold{border-top-color:var(--lab-gold)}
+.kpi-card .v{font-size:30px;font-weight:800;color:var(--spectrum-blue);line-height:1}
+.kpi-card .v.green{color:var(--green)}
+.kpi-card .v.red{color:var(--red)}
+.kpi-card .v.gold{color:var(--lab-gold)}
+.kpi-card .l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
+.kpi-card .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ─── Department cards ─── */
+.section-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:16px;font-weight:800;color:var(--spectrum-blue);margin:6px 0 14px;
+}
+.section-title:before{
+  content:'';width:4px;height:18px;background:var(--killian-blue);border-radius:2px;
+}
+
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px}
+.dept-card{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.dept-card-hd{padding:12px 16px;background:var(--spectrum-blue);color:var(--white);display:flex;align-items:center;justify-content:space-between}
+.dept-card-hd .name{font-size:14px;font-weight:700}
+.dept-card-hd .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18)}
+.dept-card-body{padding:14px 16px}
+.dept-stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f4f8;font-size:13px}
+.dept-stat-row:last-child{border-bottom:none}
+.dept-stat-row .label{color:var(--muted);font-weight:600}
+.dept-stat-row .val{font-weight:800;color:var(--spectrum-blue)}
+.dept-stat-row .val.green{color:var(--green)}
+.dept-stat-row .val.red{color:var(--red)}
+.dept-bar{margin-top:10px;height:10px;background:#e8eef5;border-radius:5px;overflow:hidden}
+.dept-bar-fill{height:100%;border-radius:5px;transition:width .5s}
+
+/* ─── Leaderboard ─── */
+.leaderboard{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px;
+}
+.leaderboard-hd{padding:12px 16px;background:var(--spectrum-blue);color:var(--white);font-size:14px;font-weight:700}
+.leader-list{padding:8px 0}
+.leader-row{
+  display:grid;grid-template-columns:50px 1fr 90px 100px 80px;gap:12px;
+  align-items:center;padding:10px 18px;border-bottom:1px solid #f0f4f8;
+}
+.leader-row:last-child{border-bottom:none}
+.leader-rank{
+  width:32px;height:32px;border-radius:50%;background:var(--alliance-blue);color:var(--spectrum-blue);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
+}
+.leader-row.top1 .leader-rank{background:var(--lab-gold);color:var(--white)}
+.leader-row.top2 .leader-rank{background:#94a3b8;color:var(--white)}
+.leader-row.top3 .leader-rank{background:#cd7f32;color:var(--white)}
+.leader-name{font-weight:700;color:var(--spectrum-blue)}
+.leader-dept{font-size:11px;color:var(--muted);font-weight:500}
+.leader-hours{font-weight:800;color:var(--spectrum-blue);font-size:15px;text-align:right}
+.leader-hours .target{font-size:11px;color:var(--muted);font-weight:500;margin-left:3px}
+.leader-bar-wrap{height:8px;background:#e8eef5;border-radius:4px;overflow:hidden}
+.leader-bar-fill{height:100%;border-radius:4px;background:var(--green)}
+.leader-bar-fill.under{background:var(--amber)}
+.leader-bar-fill.way-under{background:var(--red)}
+.leader-pct{font-size:13px;font-weight:700;color:var(--spectrum-blue);text-align:right}
+
+/* ─── Detail table ─── */
+.detail-card{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px;
+}
+.detail-card-hd{padding:12px 16px;background:var(--spectrum-blue);color:var(--white);display:flex;align-items:center;justify-content:space-between}
+.detail-card-hd .name{font-size:14px;font-weight:700}
+.detail-card-hd .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18)}
+
+.detail-table{width:100%;border-collapse:collapse;font-size:13px}
+.detail-table th{
+  background:#f4f8fc;color:var(--muted);font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;padding:10px 12px;text-align:left;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.detail-table td{padding:9px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+.detail-table tr:last-child td{border-bottom:none}
+.detail-table tr.missed{background:var(--red-row)}
+.detail-table tr.missed td{color:var(--text)}
+.detail-table tr:hover td{filter:brightness(.97)}
+.detail-table .nm{font-weight:700;color:var(--spectrum-blue)}
+.detail-table .num{text-align:center;font-variant-numeric:tabular-nums}
+.detail-table .ok{color:var(--green);font-weight:700}
+.detail-table .bad{color:var(--red);font-weight:700}
+.detail-table .warn{color:var(--amber);font-weight:700}
+.detail-table .tag{
+  display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;
+}
+.detail-table .tag.green{background:var(--green-bg);color:#166534}
+.detail-table .tag.red{background:var(--red-bg);color:#991b1b}
+.detail-table .tag.amber{background:var(--amber-bg);color:#9a3412}
+
+.empty{
+  text-align:center;padding:60px 30px;color:var(--muted);font-size:14px;
+}
+.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+
+.legend{
+  display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;color:var(--muted);
+  background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;
+}
+.legend .item{display:flex;align-items:center;gap:6px}
+.legend .swatch{width:14px;height:14px;border-radius:3px;border:1px solid var(--border)}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .leader-row{grid-template-columns:40px 1fr 70px 70px;}
+  .leader-row .leader-bar-wrap{display:none}
+  .container{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-circle">FA</div>
+  <div class="logo-text">
+    <div class="brand">FULL ARCH BUSINESS UNIT</div>
+    <div class="brand-sub">Performance Management Suite</div>
+  </div>
+  <div class="topbar-title">⏱ SKDLA Performance Management</div>
+</div>
+
+<div class="container">
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="upload-zone">
+    <div class="icon">📊</div>
+    <div class="title">Upload your timecard export</div>
+    <div class="sub">Drag &amp; drop the daily/weekly .xlsx file, or click to browse. Data is processed in your browser — nothing is uploaded anywhere.</div>
+    <label class="file-btn" for="file-input">Choose .xlsx file</label>
+    <input id="file-input" type="file" accept=".xlsx,.xls" style="display:none">
+  </div>
+
+  <div class="uploaded-info" id="uploaded-info">
+    ✓ <span id="loaded-name"></span>
+    <button class="change-btn" onclick="resetUpload()">Change file</button>
+  </div>
+
+  <!-- Report -->
+  <div id="report" style="display:none">
+
+    <div class="report-hero show" id="report-hero">
+      <div>
+        <div class="label">Performance Report</div>
+        <div class="name" id="report-date">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label for="date-filter" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.06em">Date</label>
+        <select id="date-filter" onchange="renderReport()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 10px;color:var(--white);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+          <option value="__ALL__">All dates (combined)</option>
+        </select>
+      </div>
+      <div class="meta">
+        <div class="meta-item"><div class="v" id="meta-people">0</div><div class="l">People</div></div>
+        <div class="meta-item"><div class="v" id="meta-depts">0</div><div class="l">Departments</div></div>
+      </div>
+      <button class="export-btn" onclick="exportSummary()">⬇ Export Summary CSV</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="v" id="k-total">—</div><div class="l">Capacity Provided</div><div class="sub">total hours worked</div></div>
+      <div class="kpi-card gold"><div class="v gold" id="k-target">—</div><div class="l">Target Capacity</div><div class="sub">people × 7.5h</div></div>
+      <div class="kpi-card"><div class="v" id="k-pct">—</div><div class="l">% of Target</div><div class="sub" id="k-pct-sub">—</div></div>
+      <div class="kpi-card green"><div class="v green" id="k-on">—</div><div class="l">On Target</div><div class="sub">≥7.5 hrs</div></div>
+      <div class="kpi-card red"><div class="v red" id="k-miss">—</div><div class="l">Missed Capacity</div><div class="sub">&lt;7.5 hrs</div></div>
+    </div>
+
+    <!-- Department breakdown -->
+    <div class="section-title">🏢 Department Performance</div>
+    <div class="dept-grid" id="dept-grid"></div>
+
+    <!-- Leaderboard -->
+    <div class="section-title">🏆 Capacity Leaderboard</div>
+    <div class="leaderboard">
+      <div class="leaderboard-hd">Top contributors by hours worked</div>
+      <div class="leader-list" id="leader-list"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="section-title">👤 Detailed Performance by Person</div>
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--red-row);border-color:#fecaca"></span> Missed 7.5-hour target</div>
+      <div class="item"><span class="swatch" style="background:var(--green-bg);border-color:#86efac"></span> On target / compliant</div>
+      <div class="item"><span class="swatch" style="background:var(--red-bg);border-color:#fecaca"></span> Lunch / break compliance issue</div>
+      <div class="item"><span class="swatch" style="background:var(--amber-bg);border-color:#fdba74"></span> Lunch / break borderline</div>
+    </div>
+    <div id="dept-detail-tables"></div>
+
+  </div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="empty">
+    <div class="icon">📁</div>
+    <div>Upload a timecard export to see your team's performance.</div>
+    <div style="font-size:12px;margin-top:6px">Expected columns: Emp #, Last Name, First Name, Date, Clock In Type, Clock In Time, Clock Out Type, Clock Out Time, Department, Regular, OT, Total Paid, Unpaid</div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════════════ */
+const TARGET_HOURS = 7.5;             // target capacity per person per day
+const LUNCH_REQUIRED_AFTER_HRS = 5;   // CA labor: 30+ min meal break required after 5 hrs
+const LUNCH_MIN_MINUTES = 30;         // CA labor: ≥30 min unpaid meal
+const LUNCH_MAX_MINUTES = 60;         // longer than this = excessive
+const BREAK_INFER_MIN_HRS = 6.5;      // need at least this many paid hrs to plausibly have taken both 10-min breaks
+let lastReport = null;
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD
+════════════════════════════════════════════════════════════ */
+const uploadZone = document.getElementById('upload-zone');
+const fileInput  = document.getElementById('file-input');
+
+uploadZone.addEventListener('click', e => { if (e.target.tagName !== 'LABEL') fileInput.click(); });
+['dragenter','dragover'].forEach(ev => uploadZone.addEventListener(ev, e => { e.preventDefault(); uploadZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => uploadZone.addEventListener(ev, e => { e.preventDefault(); uploadZone.classList.remove('dragover'); }));
+uploadZone.addEventListener('drop', e => {
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function resetUpload() {
+  document.getElementById('uploaded-info').classList.remove('show');
+  document.getElementById('upload-zone').style.display = '';
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('empty-state').style.display = '';
+  fileInput.value = '';
+  lastReport = null;
+}
+
+function handleFile(file) {
+  if (typeof DecompressionStream === 'undefined') {
+    alert("Your browser is too old to read .xlsx files inline. Please use a recent version of Chrome, Edge, Firefox, or Safari.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const { sheetName, rows } = await readXLSXFile(e.target.result);
+      buildReport(rows, file.name, sheetName);
+      document.getElementById('loaded-name').textContent = file.name + '  ·  Sheet: ' + sheetName;
+      document.getElementById('uploaded-info').classList.add('show');
+      document.getElementById('upload-zone').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('report').style.display = '';
+    } catch(err) {
+      console.error(err);
+      alert('Could not read this file. Make sure it\'s an .xlsx export with the expected columns.\n\n' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PARSING + ANALYSIS
+════════════════════════════════════════════════════════════ */
+function parseTime12h(s) {
+  // Accepts "07:29 AM" / "12:07 PM" / "1:30 pm"; returns minutes since midnight, or null
+  if (!s || typeof s !== 'string') return null;
+  const m = s.match(/^\s*(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?\s*$/);
+  if (!m) return null;
+  let h = parseInt(m[1],10), mn = parseInt(m[2],10);
+  const ap = (m[3]||'').toUpperCase();
+  if (ap === 'PM' && h < 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h*60 + mn;
+}
+function fmtHours(h) {
+  if (h == null || isNaN(h)) return '—';
+  return (Math.round(h*100)/100).toFixed(2);
+}
+function fmtPct(p) {
+  if (p == null || isNaN(p)) return '—';
+  return Math.round(p) + '%';
+}
+
+function buildReport(rows, fileName, sheetName) {
+  // header row
+  const header = rows[0].map(h => (h||'').toString().trim());
+  const idx = name => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+  const iEmp   = idx('Emp #');
+  const iLast  = idx('Last Name');
+  const iFirst = idx('First Name');
+  const iDate  = idx('Date');
+  const iCInT  = idx('Clock In Type');
+  const iCInTm = idx('Clock In Time');
+  const iCOuT  = idx('Clock Out Type');
+  const iCOuTm = idx('Clock Out Time');
+  const iDept  = idx('Department');
+  const iReg   = idx('Regular');
+  const iOT    = idx('OT');
+  const iPaid  = idx('Total Paid');
+  const iUnp   = idx('Unpaid');
+
+  if ([iEmp,iLast,iFirst,iCInT,iCInTm,iCOuT,iCOuTm,iPaid,iUnp].some(i=>i<0)) {
+    throw new Error('Missing one of the required columns.');
+  }
+
+  // Group by employee+date
+  const groups = new Map();
+  for (let i=1; i<rows.length; i++) {
+    const r = rows[i]; if (!r || !r[iEmp]) continue;
+    const key = r[iEmp] + '|' + (r[iDate]||'');
+    if (!groups.has(key)) {
+      groups.set(key, {
+        emp: r[iEmp], last: r[iLast]||'', first: r[iFirst]||'',
+        date: r[iDate]||'', segments: [], depts: new Set()
+      });
+    }
+    const g = groups.get(key);
+    g.segments.push({
+      cinType: r[iCInT], cinTime: r[iCInTm],
+      coutType: r[iCOuT], coutTime: r[iCOuTm],
+      reg: +r[iReg]||0, ot: +r[iOT]||0,
+      paid: +r[iPaid]||0, unpaid: +r[iUnp]||0,
+      dept: r[iDept]
+    });
+    if (r[iDept]) g.depts.add(r[iDept]);
+  }
+
+  // Compute per-person stats
+  const people = [];
+  for (const g of groups.values()) {
+    let firstIn = null, lastOut = null;
+    let paidHours = 0, lunchMinutes = 0, mealPremium = false;
+    let lunchSegments = 0, lunchOver = false;
+
+    for (const s of g.segments) {
+      // first clock-in
+      if (s.cinType === 'Clock In') {
+        const t = parseTime12h(s.cinTime);
+        if (t != null && (firstIn == null || t < firstIn)) firstIn = t;
+      }
+      // last clock-out
+      if (s.coutType === 'Clock Out') {
+        const t = parseTime12h(s.coutTime);
+        if (t != null && (lastOut == null || t > lastOut)) lastOut = t;
+      }
+      // working segments contribute paid hours (exclude lunch / meal premium)
+      if (s.cinType !== 'Start Lunch' && s.cinType !== 'Start Meal Premium') {
+        paidHours += s.paid || 0;
+      }
+      // lunch duration
+      if (s.cinType === 'Start Lunch' && s.coutType === 'End Lunch') {
+        lunchMinutes += (s.unpaid || 0) * 60;
+        lunchSegments++;
+      }
+      // meal premium (CA premium pay for missed meal break)
+      if (s.cinType === 'Start Meal Premium' || s.coutType === 'Start Meal Premium' ||
+          s.cinType === 'End Meal Premium'   || s.coutType === 'End Meal Premium') {
+        mealPremium = true;
+      }
+    }
+
+    const fullName = `${g.first} ${g.last}`.trim();
+    const dept = g.depts.size ? [...g.depts].join(', ') : 'Unassigned';
+    const shiftSpanHrs = (firstIn != null && lastOut != null)
+      ? (lastOut - firstIn) / 60
+      : null;
+
+    // ── Compliance ──
+    // Lunch
+    let lunchStatus = 'na';     // 'ok' | 'short' | 'missed' | 'long' | 'na'
+    let lunchNotes = '';
+    if (paidHours < LUNCH_REQUIRED_AFTER_HRS && !lunchSegments) {
+      lunchStatus = 'na';
+      lunchNotes = 'Lunch not required (short shift)';
+    } else if (mealPremium) {
+      lunchStatus = 'missed';
+      lunchNotes = 'Meal premium charged — lunch not properly taken';
+    } else if (lunchSegments === 0) {
+      lunchStatus = 'missed';
+      lunchNotes = 'No lunch recorded';
+    } else if (lunchMinutes < LUNCH_MIN_MINUTES) {
+      lunchStatus = 'short';
+      lunchNotes = `Lunch only ${Math.round(lunchMinutes)} min (need ≥${LUNCH_MIN_MINUTES})`;
+    } else if (lunchMinutes > LUNCH_MAX_MINUTES) {
+      lunchStatus = 'long';
+      lunchNotes = `Lunch ${Math.round(lunchMinutes)} min (longer than usual)`;
+    } else {
+      lunchStatus = 'ok';
+      lunchNotes = `Lunch ${Math.round(lunchMinutes)} min`;
+    }
+
+    // 15-min breaks (inferred): if shift was long enough (≥6.5 paid hrs) and no meal premium,
+    // assume employee had time + opportunity for both breaks. Otherwise flag.
+    let breakStatus = 'na';
+    let breakNotes = '';
+    if (paidHours < 4) {
+      breakStatus = 'na';
+      breakNotes = 'Short shift — no break required';
+    } else if (mealPremium) {
+      breakStatus = 'risk';
+      breakNotes = 'Meal premium charged — breaks likely missed';
+    } else if (paidHours >= BREAK_INFER_MIN_HRS && lunchStatus !== 'missed' && lunchStatus !== 'short') {
+      breakStatus = 'ok';
+      breakNotes = 'Sufficient paid time — both 10-min breaks plausible';
+    } else if (paidHours >= 4 && paidHours < BREAK_INFER_MIN_HRS) {
+      breakStatus = 'partial';
+      breakNotes = `${fmtHours(paidHours)} paid hrs — at least one break expected`;
+    } else {
+      breakStatus = 'risk';
+      breakNotes = 'Insufficient time and/or compliance issue';
+    }
+
+    const targetHit = paidHours >= TARGET_HOURS;
+
+    people.push({
+      emp: g.emp, fullName, last: g.last, first: g.first,
+      date: g.date, dept,
+      firstIn, lastOut, shiftSpanHrs,
+      paidHours, lunchMinutes, lunchSegments, mealPremium,
+      lunchStatus, lunchNotes, breakStatus, breakNotes,
+      targetHit, capacityPct: paidHours / TARGET_HOURS * 100
+    });
+  }
+
+  // Sort by lastName for default
+  people.sort((a,b) => a.last.localeCompare(b.last));
+
+  // Collect all unique dates
+  const allDates = [...new Set(people.map(p=>p.date).filter(Boolean))].sort();
+
+  // Populate the date filter dropdown
+  const sel = document.getElementById('date-filter');
+  sel.innerHTML = '<option value="__ALL__">All dates (combined)</option>' +
+    allDates.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  // Default to most recent date if multiple
+  sel.value = allDates.length > 1 ? allDates[allDates.length-1] : (allDates[0] || '__ALL__');
+
+  lastReport = { allPeople: people, allDates, sheetName };
+  renderReport();
+}
+
+function getFilteredReport() {
+  if (!lastReport) return null;
+  const sel = document.getElementById('date-filter');
+  const filter = sel ? sel.value : '__ALL__';
+  const people = filter === '__ALL__' ? lastReport.allPeople : lastReport.allPeople.filter(p => p.date === filter);
+  const byDept = new Map();
+  for (const p of people) {
+    if (!byDept.has(p.dept)) byDept.set(p.dept, []);
+    byDept.get(p.dept).push(p);
+  }
+  let dateLabel;
+  if (filter !== '__ALL__') dateLabel = filter;
+  else if (lastReport.allDates.length === 0) dateLabel = lastReport.sheetName;
+  else if (lastReport.allDates.length === 1) dateLabel = lastReport.allDates[0];
+  else dateLabel = `${lastReport.allDates[0]} – ${lastReport.allDates[lastReport.allDates.length-1]} (combined)`;
+  return { people, byDept, dateLabel, isCombined: filter === '__ALL__' && lastReport.allDates.length > 1 };
+}
+
+function renderReport() {
+  const filtered = getFilteredReport();
+  if (!filtered) return;
+  const { people, byDept, dateLabel, isCombined } = filtered;
+
+  // Header
+  document.getElementById('report-date').textContent = dateLabel;
+  document.getElementById('meta-people').textContent = isCombined
+    ? new Set(people.map(p=>p.emp)).size + ' (' + people.length + ' person-days)'
+    : people.length;
+  document.getElementById('meta-depts').textContent = byDept.size;
+
+  // KPIs
+  const totalPaid = people.reduce((s,p)=>s+(p.paidHours||0),0);
+  const targetTotal = people.length * TARGET_HOURS;
+  const onTarget = people.filter(p=>p.targetHit).length;
+  const missed = people.length - onTarget;
+  const pct = targetTotal ? totalPaid/targetTotal*100 : 0;
+
+  document.getElementById('k-total').textContent  = fmtHours(totalPaid);
+  document.getElementById('k-target').textContent = fmtHours(targetTotal);
+  document.getElementById('k-pct').textContent    = fmtPct(pct);
+  document.getElementById('k-pct-sub').textContent = pct>=100?'meeting target':'below target';
+  document.getElementById('k-on').textContent     = onTarget;
+  document.getElementById('k-miss').textContent   = missed;
+
+  // Departments
+  const dg = document.getElementById('dept-grid');
+  dg.innerHTML = '';
+  for (const [dept, list] of byDept) {
+    const tot = list.reduce((s,p)=>s+(p.paidHours||0),0);
+    const tgt = list.length * TARGET_HOURS;
+    const pPct = tgt ? tot/tgt*100 : 0;
+    const onT  = list.filter(p=>p.targetHit).length;
+    const lunchIssues = list.filter(p=>p.lunchStatus==='missed' || p.lunchStatus==='short').length;
+    const breakIssues = list.filter(p=>p.breakStatus==='risk').length;
+    const barColor = pPct >= 100 ? 'var(--green)' : pPct >= 90 ? 'var(--amber)' : 'var(--red)';
+    dg.insertAdjacentHTML('beforeend', `
+      <div class="dept-card">
+        <div class="dept-card-hd">
+          <div class="name">${esc(dept)}</div>
+          <div class="pill">${list.length} ${list.length===1?'person':'people'}</div>
+        </div>
+        <div class="dept-card-body">
+          <div class="dept-stat-row"><span class="label">Capacity provided</span><span class="val">${fmtHours(tot)} hrs</span></div>
+          <div class="dept-stat-row"><span class="label">Target</span><span class="val">${fmtHours(tgt)} hrs</span></div>
+          <div class="dept-stat-row"><span class="label">% of target</span><span class="val ${pPct>=100?'green':pPct<90?'red':''}">${fmtPct(pPct)}</span></div>
+          <div class="dept-stat-row"><span class="label">On target</span><span class="val">${onT}/${list.length}</span></div>
+          <div class="dept-stat-row"><span class="label">Lunch issues</span><span class="val ${lunchIssues?'red':'green'}">${lunchIssues}</span></div>
+          <div class="dept-stat-row"><span class="label">Break risks</span><span class="val ${breakIssues?'red':'green'}">${breakIssues}</span></div>
+          <div class="dept-bar"><div class="dept-bar-fill" style="width:${Math.min(pPct,150)}%;background:${barColor}"></div></div>
+        </div>
+      </div>
+    `);
+  }
+
+  // Leaderboard
+  const lb = [...people].sort((a,b)=>b.paidHours-a.paidHours).slice(0,10);
+  const ll = document.getElementById('leader-list');
+  ll.innerHTML = lb.map((p,i) => {
+    const pct = p.capacityPct;
+    const cls = pct>=100 ? '' : pct>=80 ? 'under' : 'way-under';
+    return `<div class="leader-row ${i<3?'top'+(i+1):''}">
+      <div class="leader-rank">${i+1}</div>
+      <div>
+        <div class="leader-name">${esc(p.fullName)}</div>
+        <div class="leader-dept">${esc(p.dept)}</div>
+      </div>
+      <div class="leader-hours">${fmtHours(p.paidHours)}<span class="target">/${TARGET_HOURS}</span></div>
+      <div class="leader-bar-wrap"><div class="leader-bar-fill ${cls}" style="width:${Math.min(pct,150)}%"></div></div>
+      <div class="leader-pct">${fmtPct(pct)}</div>
+    </div>`;
+  }).join('');
+
+  // Detail tables
+  const dt = document.getElementById('dept-detail-tables');
+  dt.innerHTML = '';
+  for (const [dept, list] of byDept) {
+    const sorted = [...list].sort((a,b)=>{
+      // missed-target rows first (so issues are at top), then by capacity %
+      if (a.targetHit !== b.targetHit) return a.targetHit ? 1 : -1;
+      return b.paidHours - a.paidHours;
+    });
+    dt.insertAdjacentHTML('beforeend', `
+      <div class="detail-card">
+        <div class="detail-card-hd">
+          <div class="name">${esc(dept)}</div>
+          <div class="pill">${list.length} ${list.length===1?'person':'people'}${isCombined?' (across all dates)':''}</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="detail-table">
+            <thead><tr>
+              <th>Employee</th>
+              <th>Emp #</th>
+              ${isCombined ? '<th class="num">Date</th>' : ''}
+              <th class="num">Clock In</th>
+              <th class="num">Clock Out</th>
+              <th class="num">Hours Worked</th>
+              <th class="num">vs Target</th>
+              <th class="num">Lunch</th>
+              <th class="num">Lunch OK?</th>
+              <th class="num">Breaks</th>
+              <th>Notes</th>
+            </tr></thead>
+            <tbody>
+              ${sorted.map(p => {
+                const lunchTag = p.lunchStatus==='ok' ? 'green' : p.lunchStatus==='na' ? 'amber' : 'red';
+                const lunchTagText = p.lunchStatus==='ok' ? '✓ OK' : p.lunchStatus==='na' ? 'N/A' :
+                  p.lunchStatus==='missed' ? '✗ MISSED' : p.lunchStatus==='short' ? '⚠ SHORT' : '⚠ LONG';
+                const brkTag = p.breakStatus==='ok' ? 'green' : p.breakStatus==='na' ? 'amber' :
+                  p.breakStatus==='partial' ? 'amber' : 'red';
+                const brkTagText = p.breakStatus==='ok' ? '✓ OK' : p.breakStatus==='na' ? 'N/A' :
+                  p.breakStatus==='partial' ? '⚠ ONE' : '✗ RISK';
+                const pctClass = p.capacityPct>=100 ? 'ok' : p.capacityPct>=80 ? 'warn' : 'bad';
+                return `<tr class="${p.targetHit?'':'missed'}">
+                  <td class="nm">${esc(p.fullName)}</td>
+                  <td style="font-size:11px;color:var(--muted)">${esc(p.emp)}</td>
+                  ${isCombined ? `<td class="num" style="font-size:11px;color:var(--muted)">${esc(p.date)}</td>` : ''}
+                  <td class="num">${formatMinAsTime(p.firstIn)}</td>
+                  <td class="num">${formatMinAsTime(p.lastOut)}</td>
+                  <td class="num" style="font-weight:700">${fmtHours(p.paidHours)}</td>
+                  <td class="num ${pctClass}">${fmtPct(p.capacityPct)}</td>
+                  <td class="num">${p.lunchSegments?Math.round(p.lunchMinutes)+' min':'—'}</td>
+                  <td class="num"><span class="tag ${lunchTag}">${lunchTagText}</span></td>
+                  <td class="num"><span class="tag ${brkTag}">${brkTagText}</span></td>
+                  <td style="font-size:12px;color:var(--muted);max-width:240px">${esc(p.lunchNotes + (p.breakNotes ? ' · ' + p.breakNotes : ''))}</td>
+                </tr>`;
+              }).join('')}
+            </
