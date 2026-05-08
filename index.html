@@ -412,10 +412,34 @@ textarea.form-input{min-height:80px;resize:vertical}
 .otd-heatmap-col-lbl { font-size:9px; color:var(--muted); text-align:center; white-space:nowrap; padding:0 1px; }
 .otd-heatmap-empty { padding:30px 16px; text-align:center; color:var(--muted); font-size:12px; }
 
+/* ── Daily OTD Heat Map (overall daily, not per-operation) ── */
+.otd-daily-heatmap-wrap { padding:18px 18px 22px; }
+.otd-daily-heatmap-grid { display:flex; flex-wrap:wrap; gap:6px; align-items:flex-start; }
+.otd-daily-heatmap-cell {
+  width:48px; height:60px; border-radius:6px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:#eef2f7; color:#5a7089; font-weight:700; line-height:1.05;
+  cursor:default; transition:transform .12s; position:relative; gap:2px;
+  padding:4px 2px;
+}
+.otd-daily-heatmap-cell:hover { transform:scale(1.08); box-shadow:0 2px 8px rgba(5,32,48,.18); z-index:1; }
+.otd-daily-heatmap-cell.green { background:#16a34a; color:#fff; }
+.otd-daily-heatmap-cell.amber { background:#d97706; color:#fff; }
+.otd-daily-heatmap-cell.red   { background:#dc2626; color:#fff; }
+.otd-daily-heatmap-cell.empty { background:#eef2f7; color:#94a3b8; font-weight:500; }
+.otd-daily-heatmap-cell .dow  { font-size:9px;  font-weight:700; opacity:.85; text-transform:uppercase; letter-spacing:.04em; }
+.otd-daily-heatmap-cell .day  { font-size:15px; font-weight:800; line-height:1; }
+.otd-daily-heatmap-cell .pct  { font-size:10px; font-weight:700; opacity:.95; }
+.otd-daily-heatmap-month {
+  font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;
+  width:100%; padding:8px 0 4px;
+}
+
 /* ── OTD action / required field ── */
 .otd-inp.req-empty { border-color:#dc2626; background:#fef2f2; }
 .otd-inp.ro-static { background:var(--off-white); color:var(--spectrum-blue); font-weight:600; pointer-events:none; }
 .otd-req-tag { font-size:10px; font-weight:700; color:#dc2626; margin-left:6px; letter-spacing:.04em; }
+.otd-section-divider { grid-column:1/-1; font-size:11px; font-weight:800; color:var(--killian-blue); text-transform:uppercase; letter-spacing:.06em; padding:6px 0 2px; border-bottom:1px dashed var(--border); margin-top:6px; }
 
 /* ── Metric Owners tab ── */
 .mowner-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:16px; }
@@ -2200,7 +2224,7 @@ textarea.form-input{min-height:80px;resize:vertical}
   </div>
 
   <div class="otd-summary-card">
-    <div class="otd-summary-hd">📊 Daily Summary — All Operations</div>
+    <div class="otd-summary-hd">📊 Prior Day Summary — All Operations</div>
     <div style="overflow-x:auto">
       <table class="otd-summary-table">
         <thead><tr>
@@ -2209,6 +2233,31 @@ textarea.form-input{min-height:80px;resize:vertical}
         <tbody id="otd-tbl"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="otd-summary-card">
+    <div class="otd-summary-hd" style="background:var(--killian-blue)">📋 Current Day Summary — All Operations</div>
+    <div style="overflow-x:auto">
+      <table class="otd-summary-table">
+        <thead><tr>
+          <th>Operation</th><th>Metric Owner</th><th>Today\'s Plan</th><th>Expected Output</th><th>Support / Actions Needed</th>
+        </tr></thead>
+        <tbody id="otd-current-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="otd-heatmap-card" id="otd-daily-heatmap-card">
+    <div class="otd-heatmap-hd">
+      <div>📅 Daily OTD Heat Map</div>
+      <div class="otd-heatmap-legend">
+        <span><span class="swatch" style="background:#16a34a"></span>≥95%</span>
+        <span><span class="swatch" style="background:#d97706"></span>80–94%</span>
+        <span><span class="swatch" style="background:#dc2626"></span>&lt;80%</span>
+        <span><span class="swatch" style="background:#eef2f7;border:1px solid #d8dde4"></span>No data</span>
+      </div>
+    </div>
+    <div class="otd-daily-heatmap-wrap" id="otd-daily-heatmap-wrap"></div>
   </div>
 
   <div class="otd-heatmap-card" id="otd-heatmap-card">
@@ -2239,7 +2288,7 @@ textarea.form-input{min-height:80px;resize:vertical}
   </div>
   <div class="mowner-card">
     <div class="mowner-hd">📌 Static Metric Owner Assignments</div>
-    <div class="mowner-sub">Assign a Metric Owner to each operation. These names auto-populate the operation cards and Daily Summary, and stay in place day-to-day until you change them here.</div>
+    <div class="mowner-sub">Assign a Metric Owner to each operation. These names auto-populate the operation cards and Prior/Current Day Summaries, and stay in place day-to-day until you change them here.</div>
     <div style="overflow-x:auto">
       <table class="mowner-tbl">
         <thead><tr>
@@ -3207,6 +3256,14 @@ window.addEventListener('load', updateMobileFab);
 
 /* ══ OTD TRACKER ══ */
 const OTD_OPS = ["DBTH - Case Entry", "DBTH - Case Review", "Place Parts", "Design Outsource", "Design QC", "Design Changes", "Design Bar", "Milling CAM - Bar", "Milling CAM - Arches", "Sintering", "Shape and Colorize", "Bar Cementing", "Finishing PMMA", "Finishing Zirc", "Final QC", "Case Coordination"];
+// Display-only renames (DB keeps original strings so historical rows still match)
+const OTD_DISPLAY_NAMES = {
+  "DBTH - Case Entry":   "Case Entry",
+  "DBTH - Case Review":  "Case Review",
+  "Milling CAM - Bar":   "Milling - PMMA",
+  "Milling CAM - Arches":"Milling - Zirconia"
+};
+function displayName(op) { return OTD_DISPLAY_NAMES[op] || op; }
 const OTD_MOWNERS_KEY = 'aox_metric_owners_v1';
 
 let otdDate       = new Date().toISOString().split('T')[0];   // anchor / edit date
@@ -3249,24 +3306,34 @@ function mownersGet(op) {
   return '';
 }
 
-/* notes are JSON-encoded as {"reason":"...","action":"..."} for new entries.
-   Legacy plain-string notes are treated as the reason. */
+/* notes are JSON-encoded as {reason, action, todayPlan, expectedOutput, supportNeeded}.
+   Legacy plain-string notes are treated as the reason; missing fields default to ''. */
 function otdParseNotes(raw) {
-  if (!raw) return { reason:'', action:'' };
+  const empty = { reason:'', action:'', todayPlan:'', expectedOutput:'', supportNeeded:'' };
+  if (!raw) return empty;
   const s = String(raw).trim();
   if (s.startsWith('{')) {
     try {
       const o = JSON.parse(s);
-      return { reason: o.reason || '', action: o.action || '' };
+      return {
+        reason:         o.reason         || '',
+        action:         o.action         || '',
+        todayPlan:      o.todayPlan      || '',
+        expectedOutput: o.expectedOutput || '',
+        supportNeeded:  o.supportNeeded  || ''
+      };
     } catch(e) {}
   }
-  return { reason: s, action: '' };
+  return { ...empty, reason: s };
 }
-function otdEncodeNotes(reason, action) {
-  reason = (reason||'').trim();
-  action = (action||'').trim();
-  if (!reason && !action) return null;
-  return JSON.stringify({ reason, action });
+function otdEncodeNotes(reason, action, todayPlan, expectedOutput, supportNeeded) {
+  reason         = (reason||'').trim();
+  action         = (action||'').trim();
+  todayPlan      = (todayPlan||'').trim();
+  expectedOutput = (expectedOutput||'').trim();
+  supportNeeded  = (supportNeeded||'').trim();
+  if (!reason && !action && !todayPlan && !expectedOutput && !supportNeeded) return null;
+  return JSON.stringify({ reason, action, todayPlan, expectedOutput, supportNeeded });
 }
 
 /* ---------- range computation ---------- */
@@ -3388,7 +3455,9 @@ async function loadOTD() {
     data.filter(r => r.entry_date === otdDate).forEach(r => otdRows[r.operation] = r);
     fillCards();
     renderOTDTable();
+    renderCurrentDaySummary();
     updateOTDKPIs();
+    renderDailyHeatmap();
     renderHeatmap();
   } catch(e) { console.error('OTD load',e); }
 }
@@ -3401,17 +3470,31 @@ function buildOTDCards() {
     const s = otdSlug(op);
     return `<div class="otd-card" id="otd-c-${s}">
       <div class="otd-card-hd">
-        <div class="otd-card-name">${op}</div>
+        <div class="otd-card-name">${displayName(op)}</div>
         <div class="otd-pill empty" id="otd-p-${s}">—</div>
       </div>
       <div class="otd-card-body">
-        <div class="otd-field">
+        <div class="otd-field full">
           <div class="otd-flbl">Metric Owner</div>
           <input class="otd-inp ro-static" id="otd-sup-${s}" type="text" placeholder="Set in Metric Owners tab" readonly>
         </div>
+        <div class="otd-section-divider">📋 Today\'s Plan</div>
+        <div class="otd-field">
+          <div class="otd-flbl">Today\'s Plan (units)</div>
+          <input class="otd-inp" id="otd-tplan-${s}" type="text" placeholder="e.g., 50">
+        </div>
+        <div class="otd-field">
+          <div class="otd-flbl">Expected Output</div>
+          <input class="otd-inp" id="otd-eout-${s}" type="text" placeholder="e.g., 45 by 4pm">
+        </div>
+        <div class="otd-field full">
+          <div class="otd-flbl">Support / Actions Needed</div>
+          <input class="otd-inp" id="otd-sneed-${s}" type="text" placeholder="What\'s needed for successful execution today…">
+        </div>
+        <div class="otd-section-divider">📊 Daily Actuals</div>
         <div class="otd-field">
           <div class="otd-flbl">Units Planned</div>
-          <input class="otd-inp" id="otd-pln-${s}" type="number" min="0" placeholder="0" oninput="otdCalc('${s}')">
+          <input class="otd-inp" id="otd-pln-${s}" type="number" min="0" placeholder="0" oninput="otdCalc(\'${s}\')">
         </div>
         <div class="otd-field">
           <div class="otd-flbl">Units Actual</div>
@@ -3458,8 +3541,11 @@ function fillCards() {
     if (g(`otd-lat-${s}`))  g(`otd-lat-${s}`).value = d.late_count ?? '';
     if (g(`otd-rmk-${s}`))  g(`otd-rmk-${s}`).value = d.remake_count ?? '';
     const parsed = otdParseNotes(d.notes);
-    if (g(`otd-rsn-${s}`))  g(`otd-rsn-${s}`).value = parsed.reason;
-    if (g(`otd-actn-${s}`)) g(`otd-actn-${s}`).value = parsed.action;
+    if (g(`otd-rsn-${s}`))   g(`otd-rsn-${s}`).value   = parsed.reason;
+    if (g(`otd-actn-${s}`))  g(`otd-actn-${s}`).value  = parsed.action;
+    if (g(`otd-tplan-${s}`)) g(`otd-tplan-${s}`).value = parsed.todayPlan;
+    if (g(`otd-eout-${s}`))  g(`otd-eout-${s}`).value  = parsed.expectedOutput;
+    if (g(`otd-sneed-${s}`)) g(`otd-sneed-${s}`).value = parsed.supportNeeded;
     // clear required-error state
     [`otd-rsn-${s}`, `otd-actn-${s}`].forEach(id => g(id)?.classList.remove('req-empty'));
     [`otd-rsn-tag-${s}`, `otd-act-tag-${s}`].forEach(id => { const t=g(id); if(t) t.style.display='none'; });
@@ -3498,6 +3584,9 @@ async function saveOTD(op) {
   const lat = parseInt(g(`otd-lat-${s}`)?.value) || 0;
   const reason = g(`otd-rsn-${s}`)?.value.trim() || '';
   const action = g(`otd-actn-${s}`)?.value.trim() || '';
+  const todayPlan      = g(`otd-tplan-${s}`)?.value.trim() || '';
+  const expectedOutput = g(`otd-eout-${s}`)?.value.trim()  || '';
+  const supportNeeded  = g(`otd-sneed-${s}`)?.value.trim() || '';
 
   // detect miss → mandatory reason + action
   let pct = null;
@@ -3530,7 +3619,7 @@ async function saveOTD(op) {
     units_actual:  isNaN(act) ? null : act,
     late_count:    lat,
     remake_count:  parseInt(g(`otd-rmk-${s}`)?.value) || 0,
-    notes: otdEncodeNotes(reason, action),
+    notes: otdEncodeNotes(reason, action, todayPlan, expectedOutput, supportNeeded),
     updated_at: new Date().toISOString()
   };
   try {
@@ -3553,14 +3642,14 @@ async function saveOTD(op) {
     // refresh RAID-log-derived views in the background so the new item shows up everywhere
     refreshRAIDInBackground();
 
-    toast('Saved: '+op);
+    toast('Saved: '+displayName(op));
   } catch(e) { alert('Error: '+e.message); }
 }
 
 /* Clear a single operation card's inputs so it's ready for next entry */
 function clearOTDCard(s) {
   const g = id => document.getElementById(id);
-  ['otd-pln-','otd-act-','otd-lat-','otd-rmk-','otd-rsn-','otd-actn-'].forEach(p => {
+  ['otd-pln-','otd-act-','otd-lat-','otd-rmk-','otd-rsn-','otd-actn-','otd-tplan-','otd-eout-','otd-sneed-'].forEach(p => {
     const el = g(p+s); if (el) el.value = '';
   });
   const pctEl = g('otd-pct-'+s); if (pctEl) pctEl.value = '—';
@@ -3635,7 +3724,7 @@ function renderOTDTable() {
     const c = pct === null ? '#aaa' : pct >= 95 ? '#16a34a' : pct >= 80 ? '#d97706' : '#dc2626';
     const parsed = otdParseNotes(a.latestNotes);
     return `<tr>
-      <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(op)}</td>
+      <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(displayName(op))}</td>
       <td style="font-size:13px;font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(owner)}</td>
       <td style="text-align:center">${pln ?? '—'}</td>
       <td style="text-align:center">${act ?? '—'}</td>
@@ -3680,6 +3769,87 @@ function updateOTDKPIs() {
   if (remLbl) remLbl.textContent = otdRangeType==='day' ? 'Remakes Today' : 'Remakes (range)';
   const bdg = document.getElementById('otd-badge');
   if (bdg) bdg.textContent = pcts.length || '—';
+}
+
+/* ---------- current day summary table (today's plans for selected entry date) ---------- */
+function renderCurrentDaySummary() {
+  const tb = document.getElementById('otd-current-tbl');
+  if (!tb) return;
+  const owners = mownersGetAll();
+  tb.innerHTML = OTD_OPS.map(op => {
+    const d = otdRows[op] || {};
+    const owner = owners[op] || d.supervisor || '—';
+    const parsed = otdParseNotes(d.notes);
+    const tplan  = parsed.todayPlan      || '';
+    const eout   = parsed.expectedOutput || '';
+    const sneed  = parsed.supportNeeded  || '';
+    const dim = (val, placeholder) => val
+      ? `<span style="color:var(--text)">${esc(val)}</span>`
+      : `<span style="color:var(--muted);font-style:italic;font-size:12px">${placeholder}</span>`;
+    return `<tr>
+      <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(displayName(op))}</td>
+      <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(owner)}</td>
+      <td style="font-weight:700;text-align:center">${dim(tplan,'—')}</td>
+      <td style="font-weight:700;text-align:center">${dim(eout,'—')}</td>
+      <td style="font-size:12px;max-width:280px">${dim(sneed,'No support requested')}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------- daily OTD heat map (overall per-day) ---------- */
+function renderDailyHeatmap() {
+  const wrap = document.getElementById('otd-daily-heatmap-wrap');
+  if (!wrap) return;
+
+  const days = otdEnumerateDays(otdRangeStart, otdRangeEnd);
+
+  // Index entries by date
+  const byDate = {};
+  for (const r of otdEntries) {
+    if (!byDate[r.entry_date]) byDate[r.entry_date] = [];
+    byDate[r.entry_date].push(r);
+  }
+
+  // Build cells, grouping headers by month for ranges that cross months
+  const showMonthHeaders = days.length > 14;
+  let lastMonthKey = null;
+  let html = '<div class="otd-daily-heatmap-grid">';
+  for (const ymd of days) {
+    const d = otdParseYMD(ymd);
+    const monthKey = d.getFullYear() + '-' + d.getMonth();
+    if (showMonthHeaders && monthKey !== lastMonthKey) {
+      html += `</div><div class="otd-daily-heatmap-month">${d.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div><div class="otd-daily-heatmap-grid">`;
+      lastMonthKey = monthKey;
+    }
+    const rows = byDate[ymd] || [];
+    let pln = 0, act = 0, lat = 0, hasData = false;
+    for (const r of rows) {
+      pln += r.units_planned || 0;
+      act += r.units_actual  || 0;
+      lat += r.late_count    || 0;
+      if ((r.units_planned||0) > 0 || (r.units_actual||0) > 0 || (r.late_count||0) > 0) hasData = true;
+    }
+    let pct = null;
+    if (pln > 0) pct = Math.max(0, Math.round((pln - lat) / pln * 100));
+    else if (act > 0) pct = Math.max(0, Math.round((act - lat) / act * 100));
+    let cls = 'empty';
+    if (pct !== null) cls = pct >= 95 ? 'green' : pct >= 80 ? 'amber' : 'red';
+    const label = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+    const title = `${label}` + (pct !== null ? ` · ${pct}% OTD · ${rows.length} op${rows.length===1?'':'s'} · ${lat} late` : ' · no data');
+    const dayNum = d.getDate();
+    const dowShort = d.toLocaleDateString('en-US', { weekday:'short' });
+    const inner = pct !== null
+      ? `<div class="dow">${dowShort}</div><div class="day">${dayNum}</div><div class="pct">${pct}%</div>`
+      : `<div class="dow">${dowShort}</div><div class="day">${dayNum}</div><div class="pct">—</div>`;
+    html += `<div class="otd-daily-heatmap-cell ${cls}" title="${esc(title)}">${inner}</div>`;
+  }
+  html += '</div>';
+
+  if (!days.length) {
+    wrap.innerHTML = '<div class="otd-heatmap-empty">No days in the selected range.</div>';
+    return;
+  }
+  wrap.innerHTML = html;
 }
 
 /* ---------- heat map ---------- */
@@ -3789,11 +3959,11 @@ function renderHeatmap() {
       let cls = 'empty';
       if (pct !== null) cls = pct >= 95 ? 'green' : pct >= 80 ? 'amber' : 'red';
       const ownerForCell = owners[op] || (byOpDate[op] ? Object.values(byOpDate[op]).map(r=>r.supervisor).find(s=>s) : '') || '';
-      const title = `${op}${ownerForCell ? ' ('+ownerForCell+')' : ''} · ${b.title}` + (pct!==null ? ` · ${pct}%` : ' · no data');
+      const title = `${displayName(op)}${ownerForCell ? ' ('+ownerForCell+')' : ''} · ${b.title}` + (pct!==null ? ` · ${pct}%` : ' · no data');
       return `<div class="otd-heatmap-cell ${cls}" title="${esc(title)}"></div>`;
     }).join('');
     const owner = owners[op] || '';
-    const lbl = owner ? `${op} <span style="color:var(--muted);font-weight:500">(${esc(owner)})</span>` : esc(op);
+    const lbl = owner ? `${esc(displayName(op))} <span style="color:var(--muted);font-weight:500">(${esc(owner)})</span>` : esc(displayName(op));
     return `<div class="otd-heatmap-row-lbl">${lbl}</div>${cells}`;
   }).join('');
 
@@ -3807,11 +3977,11 @@ function otdExport() {
     const p=r.units_planned||0, l=r.late_count||0, a=r.units_actual||0;
     let pct=''; if(p>0)pct=Math.max(0,Math.round((p-l)/p*100))+'%'; else if(a>0)pct=Math.max(0,Math.round((a-l)/a*100))+'%';
     const parsed = otdParseNotes(r.notes);
-    rows.push([r.entry_date, r.operation, r.supervisor||'', r.units_planned||'', r.units_actual||'', l, r.remake_count||0, pct, parsed.reason, parsed.action]);
+    rows.push([r.entry_date, displayName(r.operation), r.supervisor||'', r.units_planned||'', r.units_actual||'', l, r.remake_count||0, pct, parsed.reason, parsed.action]);
   });
   if (rows.length === 1) {
     // fallback: emit per-op blanks for current entry date
-    OTD_OPS.forEach(op => rows.push([otdDate,op,mownersGet(op)||'','','',0,0,'','','']));
+    OTD_OPS.forEach(op => rows.push([otdDate,displayName(op),mownersGet(op)||'','','',0,0,'','','']));
   }
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
@@ -3832,7 +4002,7 @@ function buildMOwnersTable() {
     const s = otdSlug(op);
     const v = (owners[op] || '').replace(/"/g,'&quot;');
     return `<tr>
-      <td style="font-weight:600;color:var(--spectrum-blue)">${esc(op)}</td>
+      <td style="font-weight:600;color:var(--spectrum-blue)">${esc(displayName(op))}</td>
       <td><input id="mown-${s}" type="text" value="${v}" placeholder="e.g. Jane Smith"></td>
     </tr>`;
   }).join('');
