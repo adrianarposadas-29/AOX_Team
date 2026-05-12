@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPI Project Tracker — Full Arch Business Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --spectrum-blue:#052030;
+  --killian-blue:#1882C7;
+  --lab-gold:#B3A369;
+  --alliance-blue:#C3E8FA;
+  --white:#ffffff;
+  --off-white:#f4f7fb;
+  --border:#dbe4ef;
+  --muted:#5a7089;
+  --text:#1a2332;
+  --shadow:0 2px 8px rgba(5,32,48,.10);
+  --shadow-lg:0 8px 32px rgba(5,32,48,.16);
+  --r:8px;
+
+  --cat-pd:#1882C7;       /* Product Development */
+  --cat-inew:#7cc7e8;     /* Innovation - New Platform (lighter accent over alliance-blue card body) */
+  --cat-iadv:#052030;     /* Innovation - Advanced Capability */
+  --cat-ve:#6b7585;       /* Value Engineering */
+
+  --green:#16a34a;
+  --amber:#d97706;
+  --red:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white);color:var(--text);font-size:14px}
+
+/* ── Topbar ── */
+.topbar{background:var(--spectrum-blue);color:var(--white);padding:14px 24px;display:flex;align-items:center;gap:14px}
+.logo-circle{width:36px;height:36px;border-radius:50%;background:var(--lab-gold);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--spectrum-blue);font-size:18px}
+.logo-text{display:flex;flex-direction:column;line-height:1}
+.brand{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
+.brand-sub{font-size:11px;font-weight:500;color:rgba(255,255,255,.65);margin-top:2px}
+.topbar-title{font-size:15px;font-weight:600;flex:1;margin-left:12px}
+
+.container{max-width:1900px;margin:0 auto;padding:18px 22px}
+
+/* ── Hero ── */
+.hero{background:var(--spectrum-blue);color:var(--white);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hero-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.55);margin-bottom:4px}
+.hero-name{font-size:19px;font-weight:800}
+.hero-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:none;border-radius:6px;padding:8px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,filter .15s}
+.btn-primary{background:var(--killian-blue);color:var(--white)}
+.btn-primary:hover{background:#1470ac}
+.btn-gold{background:var(--lab-gold);color:var(--spectrum-blue)}
+.btn-gold:hover{filter:brightness(.95)}
+.btn-ghost{background:rgba(255,255,255,.12);color:var(--white);border:1px solid rgba(255,255,255,.3)}
+.btn-ghost:hover{background:rgba(255,255,255,.22)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-danger:hover{background:#fef2f2}
+
+/* ── KPI strip ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);border-top:3px solid var(--killian-blue)}
+.kpi-card.green{border-top-color:var(--green)}
+.kpi-card.gold{border-top-color:var(--lab-gold)}
+.kpi-card .v{font-size:24px;font-weight:800;color:var(--spectrum-blue);line-height:1}
+.kpi-card .v.green{color:var(--green)}
+.kpi-card .v.gold{color:var(--lab-gold)}
+.kpi-card .l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
+
+/* ── Filters ── */
+.filters{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.filter-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.filter-group .lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+.chip{display:inline-block;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;background:#eef2f7;color:var(--muted);border:1px solid transparent;user-select:none}
+.chip.active{background:var(--alliance-blue);color:var(--spectrum-blue);border-color:var(--killian-blue)}
+.chip:hover{filter:brightness(.97)}
+.search-box{flex:1;min-width:160px;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px}
+
+/* ── Legend ── */
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--muted);margin-left:auto}
+.legend .item{display:flex;align-items:center;gap:6px}
+.legend .swatch{width:12px;height:12px;border-radius:3px;border:1px solid var(--border)}
+
+/* ── Kanban ── */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:18px;align-items:flex-start}
+.lane{background:#eaf1f7;border-radius:var(--r);min-width:280px;max-width:300px;flex:0 0 auto;display:flex;flex-direction:column;border:1px solid var(--border)}
+.lane-hd{padding:12px 14px 8px;border-bottom:1px solid #d8dde4;display:flex;align-items:center;justify-content:space-between;background:var(--white);border-radius:var(--r) var(--r) 0 0}
+.lane-name{font-size:13px;font-weight:800;color:var(--spectrum-blue);line-height:1.2}
+.lane-sub{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px}
+.lane-count{background:var(--alliance-blue);color:var(--spectrum-blue);font-size:11px;font-weight:800;padding:3px 9px;border-radius:14px;min-width:24px;text-align:center}
+.lane-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px;flex:1}
+.lane.drop-target .lane-body{background:#d6e7f5;border:2px dashed var(--killian-blue);border-radius:6px}
+
+/* ── Card ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:9px 11px;cursor:grab;position:relative;box-shadow:0 1px 3px rgba(5,32,48,.06);transition:box-shadow .12s,transform .12s}
+.card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.card.dragging{opacity:.5;cursor:grabbing}
+.card-stripe{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:6px 0 0 6px;background:#cbd5e1}
+.card.cat-pd  .card-stripe{background:var(--cat-pd)}
+.card.cat-inew .card-stripe{background:var(--cat-inew)}
+.card.cat-iadv .card-stripe{background:var(--cat-iadv)}
+.card.cat-ve  .card-stripe{background:var(--cat-ve)}
+.card-title{font-size:13px;font-weight:700;color:var(--spectrum-blue);line-height:1.25;padding-left:8px;margin-bottom:6px}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;padding-left:8px;margin-bottom:6px}
+.card-meta .pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#eef2f7;color:var(--muted)}
+.card-meta .pill.bu{background:#eef7ee;color:#166534}
+.card-meta .pill.qtr{background:#fff7ed;color:#9a3412}
+.card-savings{font-size:11px;font-weight:700;color:var(--green);padding-left:8px;margin-bottom:6px}
+.card-savings .label{font-weight:500;color:var(--muted);margin-right:3px}
+.card-strategy{font-size:11px;color:var(--muted);padding-left:8px;margin-bottom:6px;line-height:1.3}
+.card-progress{padding-left:8px}
+.card-progress .track{height:5px;background:#e8eef5;border-radius:3px;overflow:hidden}
+.card-progress .fill{height:100%;border-radius:3px;background:var(--killian-blue);transition:width .4s}
+.card-progress .fill.done{background:var(--green)}
+.card-progress .fill.late{background:var(--amber)}
+.card-progress .fill.blocked{background:var(--red)}
+.card-progress .pctlbl{font-size:10px;font-weight:700;color:var(--muted);margin-top:2px;text-align:right}
+
+/* ── Modal ── */
+.modal-mask{position:fixed;inset:0;background:rgba(5,32,48,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-mask.show{display:flex}
+.modal{background:var(--white);border-radius:var(--r);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-hd{padding:14px 20px;background:var(--spectrum-blue);color:var(--white);border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between}
+.modal-hd .title{font-size:15px;font-weight:800}
+.modal-close{background:transparent;border:none;color:var(--white);font-size:22px;cursor:pointer;line-height:1}
+.modal-body{padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-body .full{grid-column:1/-1}
+.modal-body label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.modal-body input,.modal-body select,.modal-body textarea{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13px;color:var(--text);background:var(--white)}
+.modal-body input:focus,.modal-body select:focus,.modal-body textarea:focus{outline:none;border-color:var(--killian-blue);box-shadow:0 0 0 3px rgba(24,130,199,.12)}
+.modal-body textarea{resize:vertical;min-height:60px}
+.modal-body input[type=range]{padding:0}
+.status-display{font-size:14px;font-weight:800;color:var(--spectrum-blue);margin-top:2px}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:#fafcff;border-radius:0 0 var(--r) var(--r)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--spectrum-blue);color:var(--white);padding:10px 18px;border-radius:6px;box-shadow:var(--shadow-lg);font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:200}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty-board{padding:50px 20px;text-align:center;color:var(--muted);font-size:14px;background:var(--white);border:1px dashed var(--border);border-radius:var(--r);margin:20px 0}
+.empty-board .icon{font-size:42px;margin-bottom:10px;opacity:.5}
+.empty-board .btn{margin-top:14px}
+
+.loading-bar{height:3px;background:var(--killian-blue);width:0;transition:width .3s;position:fixed;top:0;left:0;z-index:300}
+
+@media (max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .lane{min-width:240px;max-width:260px}
+  .container{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<div class="topbar">
+  <div class="logo-circle">FA</div>
+  <div class="logo-text">
+    <div class="brand">FULL ARCH BUSINESS UNIT</div>
+    <div class="brand-sub">Engineering Project Portfolio</div>
+  </div>
+  <div class="topbar-title">🚀 NPI Project Tracker</div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <div>
+      <div class="hero-title">New Product Introduction</div>
+      <div class="hero-name">🚀 Engineering Project Funnel</div>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="openCardModal()">+ Add Project</button>
+      <button class="btn btn-gold" onclick="seedSampleProjects()">Load Sample Data</button>
+      <button class="btn btn-ghost" onclick="loadProjects()" title="Refresh">↻</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="v" id="k-total">—</div><div class="l">Total Projects</div></div>
+    <div class="kpi-card gold"><div class="v gold" id="k-savings">—</div><div class="l">Monthly Savings (target)</div></div>
+    <div class="kpi-card green"><div class="v green" id="k-realized">—</div><div class="l">Savings Realized</div></div>
+    <div class="kpi-card"><div class="v" id="k-portfolio">—</div><div class="l">Portfolio Engineering Status</div></div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <span class="lbl">Category</span>
+      <span class="chip active" data-filter="cat" data-val="">All</span>
+      <span class="chip" data-filter="cat" data-val="Product Development">Product Dev</span>
+      <span class="chip" data-filter="cat" data-val="Innovation - New Platform">Innov · New</span>
+      <span class="chip" data-filter="cat" data-val="Innovation - Advanced Capability">Innov · Adv</span>
+      <span class="chip" data-filter="cat" data-val="Value Engineering">Value Eng</span>
+    </div>
+    <div class="filter-group">
+      <span class="lbl">BU</span>
+      <span class="chip active" data-filter="bu" data-val="">All</span>
+      <span class="chip" data-filter="bu" data-val="C&amp;B">C&amp;B</span>
+      <span class="chip" data-filter="bu" data-val="Removable">Removable</span>
+      <span class="chip" data-filter="bu" data-val="Full Arch">Full Arch</span>
+      <span class="chip" data-filter="bu" data-val="Cross-BU">Cross-BU</span>
+    </div>
+    <div class="filter-group">
+      <span class="lbl">Quarter</span>
+      <span class="chip active" data-filter="qtr" data-val="">All</span>
+      <span class="chip" data-filter="qtr" data-val="Q1">Q1</span>
+      <span class="chip" data-filter="qtr" data-val="Q2">Q2</span>
+      <span class="chip" data-filter="qtr" data-val="Q3">Q3</span>
+      <span class="chip" data-filter="qtr" data-val="Q4">Q4</span>
+    </div>
+    <input class="search-box" id="search-box" type="text" placeholder="🔍 Search project name or strategy…" oninput="renderBoard()">
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--cat-pd)"></span>Product Dev</div>
+      <div class="item"><span class="swatch" style="background:var(--cat-inew)"></span>Innov · New</div>
+      <div class="item"><span class="swatch" style="background:var(--cat-iadv)"></span>Innov · Adv</div>
+      <div class="item"><span class="swatch" style="background:var(--cat-ve)"></span>Value Eng</div>
+    </div>
+  </div>
+
+  <div class="kanban" id="kanban"></div>
+
+  <div class="empty-board" id="empty-board" style="display:none">
+    <div class="icon">📋</div>
+    <div>No projects yet. Click "Load Sample Data" above to seed the board with the projects from your roadmap, or "Add Project" to start fresh.</div>
+  </div>
+</div>
+
+<!-- Edit / Add modal -->
+<div class="modal-mask" id="modal-mask">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="title" id="modal-title">Add Project</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id">
+
+      <label class="full">Project Name
+        <input type="text" id="m-title" placeholder="e.g., Atlantis Implant Bundle">
+      </label>
+
+      <label>Category
+        <select id="m-category">
+          <option>Product Development</option>
+          <option>Innovation - New Platform</option>
+          <option>Innovation - Advanced Capability</option>
+          <option>Value Engineering</option>
+        </select>
+      </label>
+
+      <label>Business Unit
+        <select id="m-bu">
+          <option value="">—</option>
+          <option>C&amp;B</option>
+          <option>Removable</option>
+          <option>Full Arch</option>
+          <option>Cross-BU</option>
+        </select>
+      </label>
+
+      <label>Phase
+        <select id="m-phase">
+          <option>Phase 0</option>
+          <option>Phase 1</option>
+          <option>Phase 2</option>
+          <option>Phase 4</option>
+          <option>Gate</option>
+          <option>Transferred</option>
+        </select>
+      </label>
+
+      <label>Quarter
+        <select id="m-quarter">
+          <option value="">—</option>
+          <option>Q1</option>
+          <option>Q2</option>
+          <option>Q3</option>
+          <option>Q4</option>
+        </select>
+      </label>
+
+      <label>Monthly Savings ($)
+        <input type="number" id="m-savings" min="0" step="100" placeholder="0">
+      </label>
+
+      <label>Savings Realized ($)
+        <input type="number" id="m-realized" min="0" step="100" placeholder="0">
+      </label>
+
+      <label class="full">Engineering Status (<span id="m-status-val">0</span>%)
+        <input type="range" id="m-status" min="0" max="100" step="5" value="0" oninput="document.getElementById('m-status-val').textContent=this.value">
+      </label>
+
+      <label class="full">HC Strategy
+        <input type="text" id="m-hc" placeholder="e.g., Reduce 2 HC once deployed">
+      </label>
+
+      <label class="full">Notes
+        <textarea id="m-notes" placeholder="Updates, blockers, context…"></textarea>
+      </label>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger" id="m-delete" onclick="deleteCard()" style="display:none">Delete</button>
+      <button class="btn btn-ghost" style="background:#eef2f7;color:var(--muted);border-color:var(--border)" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCard()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════════════ */
+// Same Supabase project that powers the OTD/RAID dashboard.
+const SB_URL = 'https://asdunkqodixbhbohxtuq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzZHVua3FvZGl4Ymhib2h4dHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDUwNTcsImV4cCI6MjA5MDgyMTA1N30.lStrSSEpwFFk5GuXl2qzh2tr6bLZFY4_x9u6q4FcVeo';
+
+const PHASES = [
+  { key:'Phase 0',     name:'Phase 0',         sub:'Opportunity Evaluation' },
+  { key:'Phase 1',     name:'Phase 1',         sub:'Concept / Proof of Concept' },
+  { key:'Phase 2',     name:'Phase 2',         sub:'Design & Engineering' },
+  { key:'Phase 4',     name:'Phase 4',         sub:'Commercial Launch' },
+  { key:'Gate',        name:'Gate',            sub:'VOC & Quality Check' },
+  { key:'Transferred', name:'Transferred',     sub:'Mfr · NPI Eng Released' }
+];
+
+const CATEGORIES = {
+  'Product Development':              'cat-pd',
+  'Innovation - New Platform':        'cat-inew',
+  'Innovation - Advanced Capability': 'cat-iadv',
+  'Value Engineering':                'cat-ve'
+};
+
+let DATA = [];
+const filters = { cat:'', bu:'', qtr:'' };
+
+/* ════════════════════════════════════════════════════════════
+   API
+════════════════════════════════════════════════════════════ */
+async function sbFetch(path, method='GET', body=null){
+  const opts = {
+    method,
+    headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json', 'Prefer':'return=representation' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+  if (!r.ok) {
+    const msg = await r.text();
+    throw new Error(`${r.status}: ${msg}`);
+  }
+  const text = await r.text();
+  return text ? JSON.parse(text) : [];
+}
+
+function setLoading(on){ document.getElementById('loading-bar').style.width = on ? '90%' : '0'; }
+
+async function loadProjects(){
+  setLoading(true);
+  try {
+    DATA = await sbFetch('npi_projects?order=phase.asc,sort_order.asc,id.asc');
+    renderBoard();
+  } catch(e){
+    toast('Load failed: ' + e.message);
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RENDER
+════════════════════════════════════════════════════════════ */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function fmt$(n){ if (!n) return '$0'; return '$' + (n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'K' : n.toFixed(0)); }
+
+function passesFilters(p){
+  if (filters.cat && p.category !== filters.cat) return false;
+  if (filters.bu  && p.business_unit !== filters.bu) return false;
+  if (filters.qtr && p.quarter !== filters.qtr) return false;
+  const q = (document.getElementById('search-box')?.value || '').trim().toLowerCase();
+  if (q) {
+    const blob = ((p.title||'') + ' ' + (p.hc_strategy||'') + ' ' + (p.notes||'')).toLowerCase();
+    if (!blob.includes(q)) return false;
+  }
+  return true;
+}
+
+function renderBoard(){
+  const board = document.getElementById('kanban');
+  const visible = DATA.filter(passesFilters);
+  document.getElementById('empty-board').style.display = DATA.length === 0 ? '' : 'none';
+
+  // KPIs (use ALL data, not filtered)
+  document.getElementById('k-total').textContent = DATA.length;
+  const totalSav = DATA.reduce((s,p)=>s + (Number(p.monthly_savings)||0), 0);
+  const totalReal = DATA.reduce((s,p)=>s + (Number(p.savings_realized)||0), 0);
+  document.getElementById('k-savings').textContent = fmt$(totalSav);
+  document.getElementById('k-realized').textContent = fmt$(totalReal);
+  const statuses = DATA.map(p => Number(p.engineering_status)||0);
+  const avgStatus = statuses.length ? Math.round(statuses.reduce((a,b)=>a+b,0) / statuses.length) : 0;
+  document.getElementById('k-portfolio').textContent = avgStatus + '%';
+
+  board.innerHTML = '';
+  for (const phase of PHASES) {
+    const lane = document.createElement('div');
+    lane.className = 'lane';
+    lane.dataset.phase = phase.key;
+
+    const items = visible.filter(p => (p.phase || 'Phase 0') === phase.key);
+    items.sort((a,b) => (a.sort_order||0) - (b.sort_order||0));
+
+    lane.innerHTML = `
+      <div class="lane-hd">
+        <div>
+          <div class="lane-name">${esc(phase.name)}</div>
+          <div class="lane-sub">${esc(phase.sub)}</div>
+        </div>
+        <div class="lane-count">${items.length}</div>
+      </div>
+      <div class="lane-body">
+        ${items.map(renderCard).join('')}
+      </div>
+    `;
+    // drag-and-drop handlers
+    const body = lane.querySelector('.lane-body');
+    body.addEventListener('dragover', e => { e.preventDefault(); lane.classList.add('drop-target'); });
+    body.addEventListener('dragleave', e => { lane.classList.remove('drop-target'); });
+    body.addEventListener('drop', async e => {
+      e.preventDefault();
+      lane.classList.remove('drop-target');
+      const id = e.dataTransfer.getData('text/plain');
+      if (id) await moveCard(parseInt(id, 10), phase.key);
+    });
+
+    board.appendChild(lane);
+  }
+
+  // wire card click + drag handlers
+  for (const c of board.querySelectorAll('.card')) {
+    c.addEventListener('click', e => { if (!e.target.closest('button')) openCardModal(parseInt(c.dataset.id, 10)); });
+    c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('dragging'); });
+    c.addEventListener('dragend',   e => { c.classList.remove('dragging'); });
+  }
+}
+
+function renderCard(p){
+  const catClass = CATEGORIES[p.category] || 'cat-pd';
+  const status = Number(p.engineering_status) || 0;
+  const fillCls = status >= 100 ? 'done' : status >= 70 ? '' : status >= 30 ? 'late' : 'blocked';
+  const sav = Number(p.monthly_savings) || 0;
+  return `
+    <div class="card ${catClass}" draggable="true" data-id="${p.id}">
+      <div class="card-stripe"></div>
+      <div class="card-title">${esc(p.title)}</div>
+      <div class="card-meta">
+        ${p.business_unit ? `<span class="pill bu">${esc(p.business_unit)}</span>` : ''}
+        ${p.quarter       ? `<span class="pill qtr">${esc(p.quarter)}</span>`       : ''}
+        <span class="pill">${esc(p.category || '—')}</span>
+      </div>
+      ${sav > 0 ? `<div class="card-savings"><span class="label">Monthly:</span>${fmt$(sav)}${(Number(p.savings_realized)||0) > 0 ? `  ·  <span class="label">Realized:</span>${fmt$(p.savings_realized)}` : ''}</div>` : ''}
+      ${p.hc_strategy ? `<div class="card-strategy">${esc(p.hc_strategy)}</div>` : ''}
+      <div class="card-progress">
+        <div class="track"><div class="fill ${fillCls}" style="width:${Math.min(status, 100)}%"></div></div>
+        <div class="pctlbl">${status}%</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FILTERS
+════════════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  const filter = chip.dataset.filter;
+  if (!filter) return;
+  // toggle active state within the same filter group
+  document.querySelectorAll(`.chip[data-filter="${filter}"]`).forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  filters[filter] = chip.dataset.val || '';
+  renderBoard();
+});
+
+/* ════════════════════════════════════════════════════════════
+   CARD MODAL
+════════════════════════════════════════════════════════════ */
+function openCardModal(id){
+  document.getElementById('modal-mask').classList.add('show');
+  const isEdit = id != null;
+  document.getElementById('modal-title').textContent = isEdit ? 'Edit Project' : 'Add Project';
+  document.getElementById('m-delete').style.display = isEdit ? '' : 'none';
+
+  const p = isEdit ? DATA.find(x => x.id === id) : {};
+  document.getElementById('m-id').value         = p.id || '';
+  document.getElementById('m-title').value      = p.title || '';
+  document.getElementById('m-category').value   = p.category || 'Product Development';
+  document.getElementById('m-bu').value         = p.business_unit || '';
+  document.getElementById('m-phase').value      = p.phase || 'Phase 0';
+  document.getElementById('m-quarter').value    = p.quarter || '';
+  document.getElementById('m-savings').value    = p.monthly_savings || '';
+  document.getElementById('m-realized').value   = p.savings_realized || '';
+  document.getElementById('m-status').value     = Number(p.engineering_status) || 0;
+  document.getElementById('m-status-val').textContent = Number(p.engineering_status) || 0;
+  document.getElementById('m-hc').value         = p.hc_strategy || '';
+  document.getElementById('m-notes').value      = p.notes || '';
+  setTimeout(() => document.getElementById('m-title').focus(), 50);
+}
+
+function closeModal(){ document.getElementById('modal-mask').classList.remove('show'); }
+
+async function saveCard(){
+  const id = document.getElementById('m-id').value;
+  const payload = {
+    title:              document.getElementById('m-title').value.trim(),
+    category:           document.getElementById('m-category').value,
+    business_unit:      document.getElementById('m-bu').value || null,
+    phase:              document.getElementById('m-phase').value,
+    quarter:            document.getElementById('m-quarter').value || null,
+    monthly_savings:    parseFloat(document.getElementById('m-savings').value) || 0,
+    savings_realized:   parseFloat(document.getElementById('m-realized').value) || 0,
+    engineering_status: parseInt(document.getElementById('m-status').value, 10) || 0,
+    hc_strategy:        document.getElementById('m-hc').value.trim() || null,
+    notes:              document.getElementById('m-notes').value.trim() || null,
+    updated_at:         new Date().toISOString()
+  };
+  if (!payload.title) { alert('Project name is required.'); return; }
+  try {
+    if (id) {
+      await sbFetch(`npi_projects?id=eq.${id}`, 'PATCH', payload);
+      toast('Updated: ' + payload.title);
+    } else {
+      await sbFetch('npi_projects', 'POST', payload);
+      toast('Added: ' + payload.title);
+    }
+    closeModal();
+    await loadProjects();
+  } catch(e) {
+    alert('Save failed: ' + e.message);
+  }
+}
+
+async function deleteCard(){
+  const id = document.getElementById('m-id').value;
+  if (!id) return;
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  try {
+    await sbFetch(`npi_projects?id=eq.${id}`, 'DELETE');
+    toast('Deleted');
+    closeModal();
+    await loadProjects();
+  } catch(e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+async function moveCard(id, newPhase){
+  const p = DATA.find(x => x.id === id);
+  if (!p || p.phase === newPhase) return;
+  try {
+    await sbFetch(`npi_projects?id=eq.${id}`, 'PATCH', { phase: newPhase, updated_at: new Date().toISOString() });
+    toast(`Moved "${p.title}" → ${newPhase}`);
+    await loadProjects();
+  } catch(e) {
+    alert('Move failed: ' + e.message);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SEED DATA — projects from the roadmap + tracker screenshots
+════════════════════════════════════════════════════════════ */
+const SEED = [
+  // ── Value Engineering tracker (from Project Tracker screenshot) ──
+  { title:"Mini Model",                          category:"Value Engineering",                business_unit:"C&B",       phase:"Transferred", quarter:"Q1", monthly_savings:48000, savings_realized:48000, engineering_status:100, hc_strategy:"Material — no HC change" },
+  { title:"Mini Model — Design Cost Reduce",     category:"Value Engineering",                business_unit:"C&B",       phase:"Transferred", quarter:"Q1", monthly_savings:20000, savings_realized:20000, engineering_status:100, hc_strategy:"Outsource design (1 HC re-deployed)" },
+  { title:"Outsource Wax & Metal",               category:"Value Engineering",                business_unit:"C&B",       phase:"Gate",        quarter:"Q1", monthly_savings:12000, savings_realized:0,     engineering_status:98,  hc_strategy:"Reduce 2 HC once deployed" },
+  { title:"Outsource Analog Dentures",           category:"Value Engineering",                business_unit:"Removable", phase:"Transferred", quarter:"Q1", monthly_savings:26000, savings_realized:26000, engineering_status:100, hc_strategy:"Move 4 HC: 2 → Crown, 2 → Samples" },
+  { title:"CT Scanner / Model",                  category:"Value Engineering",                business_unit:"C&B",       phase:"Transferred", quarter:"Q1", monthly_savings:9800,  savings_realized:9800,  engineering_status:100, hc_strategy:"Eliminate Model step (1 HC to Milling HC)" },
+  { title:"Auto Polish Dentures (Phase 1)",      category:"Value Engineering",                business_unit:"Removable", phase:"Gate",        quarter:"Q2", monthly_savings:25000, savings_realized:0,     engineering_status:95,  hc_strategy:"Eliminate manual polish (3 HC over time)" },
+  { title:"Carbon Auto Print Prep (APP)",        category:"Value Engineering",                business_unit:"Removable", phase:"Gate",        quarter:"Q2", monthly_savings:11000, savings_realized:0,     engineering_status:98,  hc_strategy:"STL mgmt. 1 HC → printer ops, APP −1 HC" },
+  { title:"Automated Bar Design (LFX)",          category:"Value Engineering",                business_unit:"Full Arch", phase:"Transferred", quarter:"Q2", monthly_savings:4200,  savings_realized:0,     engineering_status:100, hc_strategy:"Capacity gain — no HC reduction" },
+  { title:"Eliminate Bar Fitting (Hybrid)",      category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 4",     quarter:"Q2", monthly_savings:12000, savings_realized:0,     engineering_status:50,  hc_strategy:"Removes 2 HC, unlocks SPF & capacity" },
+  { title:"Relu AI Crown Design",                category:"Value Engineering",                business_unit:"C&B",       phase:"Phase 4",     quarter:"Q2", monthly_savings:22000, savings_realized:0,     engineering_status:70,  hc_strategy:"Move 2 design HC to InvisaART" },
+  { title:"ClearPath / Great Labs",              category:"Value Engineering",                business_unit:"C&B",       phase:"Phase 2",     quarter:"Q3", monthly_savings:17900, savings_realized:0,     engineering_status:30,  hc_strategy:"Outsource overflow — no HC change" },
+  { title:"Optimize Crown Finishing Cost",       category:"Value Engineering",                business_unit:"C&B",       phase:"Phase 0",     quarter:"Q3", monthly_savings:18000, savings_realized:0,     engineering_status:5,   hc_strategy:"Eliminate finishing step (1 HC)" },
+
+  // ── Value Engineering — additional from roadmap ──
+  { title:"Titanium Bar Tolerancing",            category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 4",     quarter:"Q1", monthly_savings:0, engineering_status:80 },
+  { title:"Wax/Metal Outsourcing",               category:"Value Engineering",                business_unit:"C&B",       phase:"Phase 4",     quarter:"Q1", monthly_savings:0, engineering_status:75 },
+  { title:"TRI Pricing Optimization FA",         category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", monthly_savings:0, engineering_status:60 },
+  { title:"TRI Billing Optimization",            category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", monthly_savings:0, engineering_status:60 },
+  { title:"Auto Polish — Removables",            category:"Value Engineering",                business_unit:"Removable", phase:"Phase 2",     quarter:"Q1", monthly_savings:0, engineering_status:55 },
+  { title:"(Pricing) Char. of LDP Dentures",     category:"Value Engineering",                business_unit:"Removable", phase:"Phase 1",     quarter:"Q1", monthly_savings:0, engineering_status:25 },
+  { title:"Polish C&B (Eliminate Glaze)",        category:"Value Engineering",                business_unit:"C&B",       phase:"Phase 1",     quarter:"Q2", monthly_savings:0, engineering_status:20 },
+  { title:"Carbon APP — Removables",             category:"Value Engineering",                business_unit:"Removable", phase:"Phase 2",     quarter:"Q1", monthly_savings:0, engineering_status:55 },
+  { title:"Keyence for Milling",                 category:"Value Engineering",                business_unit:"Cross-BU",  phase:"Phase 1",     quarter:"Q2", monthly_savings:0, engineering_status:20 },
+  { title:"Bar Fit and Polish to Milling",       category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 1",     quarter:"Q2", monthly_savings:0, engineering_status:20 },
+  { title:"Bar Design Phase II",                 category:"Value Engineering",                business_unit:"Full Arch", phase:"Phase 0",     quarter:"Q2", monthly_savings:0, engineering_status:10 },
+
+  // ── Product Development ──
+  { title:"BioHorizon Bundle",                   category:"Product Development",              business_unit:"Full Arch", phase:"Phase 4",     quarter:"Q1", engineering_status:85 },
+  { title:"Allure",                              category:"Product Development",              business_unit:"C&B",       phase:"Phase 2",     quarter:"Q1", engineering_status:60 },
+  { title:"Nuvia 24 Hr Wax up",                  category:"Product Development",              business_unit:"Removable", phase:"Phase 2",     quarter:"Q1", engineering_status:60 },
+  { title:"Invisart Integration",                category:"Product Development",              business_unit:"C&B",       phase:"Phase 2",     quarter:"Q1", engineering_status:50 },
+  { title:"TRI T-Marker",                        category:"Product Development",              business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", engineering_status:50 },
+  { title:"Neodent DirectFit",                   category:"Product Development",              business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", engineering_status:50 },
+  { title:"MB2 AOX Case Submission",             category:"Product Development",              business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", engineering_status:50 },
+  { title:"MB2 Surgical Guides",                 category:"Product Development",              business_unit:"Full Arch", phase:"Phase 2",     quarter:"Q1", engineering_status:50 },
+  { title:"GP/Specialist Workflow — P1",         category:"Product Development",              business_unit:"Cross-BU",  phase:"Phase 2",     quarter:"Q1", engineering_status:45 },
+  { title:"Atlantis Implant Bundle",             category:"Product Development",              business_unit:"Full Arch", phase:"Phase 1",     quarter:"Q2", engineering_status:25 },
+
+  // ── Innovation - New Platform ──
+  { title:"Crooked Mouth",                       category:"Innovation - New Platform",        business_unit:"Cross-BU",  phase:"Phase 1",     quarter:"Q1", engineering_status:30 },
+  { title:"Sprintray Smile Test Drive",          category:"Innovation - New Platform",        business_unit:"Cross-BU",  phase:"Phase 1",     quarter:"Q2", engineering_status:20 },
+  { title:"iOConnect Scan Bridge",               category:"Innovation - New Platform",        business_unit:"Cross-BU",  phase:"Phase 2",     quarter:"Q1", engineering_status:55 },
+  { title:"Xeus",                                category:"Innovation - New Platform",        business_unit:"Cross-BU",  phase:"Phase 1",     quarter:"Q1", engineering_status:30 },
+  { title:"Neer",                                category:"Innovation - New Platform",        business_unit:"Cross-BU",  phase:"Phase 0",     quarter:"Q1", engineering_status:10 },
+
+  // ── Innovation - Advanced Capability ──
+  { title:"Hydrodipping",                        category:"Innovation - Advanced Capability", business_unit:"Cross-BU",  phase:"Phase 1",     quarter:"Q1", engineering_status:30 },
+  { title:"Design Divergence Calculator",        category:"Innovation - Advanced Capability", business_unit:"Cross-BU",  phase:"Phase 0",     quarter:"Q2", engineering_status:10 },
+  { title:"Metal Printing — Bars",               category:"Innovation - Advanced Capability", business_unit:"Full Arch", phase:"Phase 0",     quarter:"Q2", engineering_status:10 },
+  { title:"MiYo Glaze Formulation",              category:"Innovation - Advanced Capability", business_unit:"C&B",       phase:"Phase 0",     quarter:"Q2", engineering_status:10 },
+  { title:"Metal Printing — Metal Mesh",         category:"Innovation - Advanced Capability", business_unit:"Removable", phase:"Phase 0",     quarter:"Q2", engineering_status:10 }
+];
+
+async function seedSampleProjects(){
+  if (DATA.length > 0) {
+    if (!confirm(`There are already ${DATA.length} project(s) on the board. Add the ${SEED.length} sample projects on top of them?`)) return;
+  } else if (!confirm(`Load ${SEED.length} sample projects from your roadmap into Supabase?`)) {
+    return;
+  }
+  setLoading(true);
+  let ok = 0, fail = 0;
+  for (const p of SEED) {
+    try {
+      await sbFetch('npi_projects', 'POST', { ...p, updated_at: new Date().toISOString() });
+      ok++;
+    } catch(e) {
+      console.error('Seed failed:', p.title, e);
+      fail++;
+    }
+  }
+  setLoading(false);
+  toast(`Seeded ${ok} project${ok===1?'':'s'}${fail ? ` · ${fail} failed (check console)` : ''}`);
+  await loadProjects();
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════════════ */
+loadProjects();
+
+// close modal on backdrop click + Esc
+document.getElementById('modal-mask').addEventListener('click', e => { if (e.target.id === 'modal-mask') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+console.log('[NPI Tracker] ready — Supabase:', SB_URL);
+</script>
+
+</body>
+</html>
