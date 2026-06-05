@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NPI Project Tracker — Full Arch Business Unit</title>
+<title>ClearPath OS — NPI Module</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
   --spectrum-blue:#052030;
@@ -14,10 +14,10 @@
   --lab-gold:#B3A369;
   --alliance-blue:#C3E8FA;
   --white:#ffffff;
-  --off-white:#f4f7fb;
-  --border:#dbe4ef;
+  --off-white:#eef3f8;
+  --border:#dde6ee;
   --muted:#5a7089;
-  --text:#1a2332;
+  --text:#0e2433;
   --shadow:0 2px 8px rgba(5,32,48,.10);
   --shadow-lg:0 8px 32px rgba(5,32,48,.16);
   --r:8px;
@@ -32,15 +32,39 @@
   --red:#dc2626;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white);color:var(--text);font-size:14px}
+html,body{height:100%;font-family:'Montserrat',-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--off-white);color:var(--text);font-size:14px}
 
-/* ── Topbar ── */
-.topbar{background:var(--spectrum-blue);color:var(--white);padding:14px 24px;display:flex;align-items:center;gap:14px}
-.logo-circle{width:36px;height:36px;border-radius:50%;background:var(--lab-gold);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--spectrum-blue);font-size:18px}
-.logo-text{display:flex;flex-direction:column;line-height:1}
-.brand{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
-.brand-sub{font-size:11px;font-weight:500;color:rgba(255,255,255,.65);margin-top:2px}
-.topbar-title{font-size:15px;font-weight:600;flex:1;margin-left:12px}
+/* ── CLEARPATH OS — STANDARD MODULE HEADER (light theme) ──
+   Brand lockup (left) + module title + designer slot + Spectrum Killian (right).
+   Logo sizes, "Operating System" gold text and module-title weight are FIXED. */
+.cpx-header{
+  display:flex; align-items:center; gap:14px;
+  padding:10px 28px;
+  background:#ffffff;
+  border-bottom:1px solid #dde6ee;
+}
+.cpx-brandgroup{display:flex; align-items:flex-end; gap:14px;}
+.cpx-logostack{position:relative; display:flex; flex-direction:column; align-items:flex-start;}
+.cpx-clearpath{height:34px; width:auto; display:block;}
+.cpx-os{
+  position:absolute; top:100%; left:0; margin-top:2px; margin-left:43px;
+  font-size:8px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  color:#B3A369; white-space:nowrap;
+}
+.cpx-divider{align-self:flex-end; width:1px; height:30px; margin-bottom:1px; background:#c6d4e0;}
+.cpx-module{
+  position:relative; bottom:4px;
+  font-size:21px; font-weight:800; line-height:1; letter-spacing:-.3px;
+  color:#0e2433; white-space:nowrap;
+}
+.cpx-slot{flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:12px;}
+.cpx-bu-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.cpx-sk{height:76px; width:auto; display:block;}
+@media(max-width:760px){
+  .cpx-header{padding:8px 14px; flex-wrap:wrap; gap:10px;}
+  .cpx-module{font-size:17px;}
+  .cpx-sk{height:58px;}
+}
 
 .container{max-width:1900px;margin:0 auto;padding:18px 22px}
 
@@ -73,6 +97,17 @@ html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white
 .filters{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
 .filter-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .filter-group .lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+.filter-select{
+  border:1px solid var(--border);border-radius:6px;
+  padding:6px 28px 6px 10px;font-family:inherit;font-size:13px;font-weight:600;
+  color:var(--text);background:var(--white);cursor:pointer;outline:none;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%235a7089' d='M6 8L0 0h12z'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:8px;
+  transition:border-color .15s;
+}
+.filter-select:hover{border-color:var(--killian-blue)}
+.filter-select:focus{border-color:var(--killian-blue);box-shadow:0 0 0 3px rgba(24,130,199,.12)}
 .chip{display:inline-block;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;background:#eef2f7;color:var(--muted);border:1px solid transparent;user-select:none}
 .chip.active{background:var(--alliance-blue);color:var(--spectrum-blue);border-color:var(--killian-blue)}
 .chip:hover{filter:brightness(.97)}
@@ -156,21 +191,31 @@ html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white
 
 <div class="loading-bar" id="loading-bar"></div>
 
-<div class="topbar">
-  <div class="logo-circle">FA</div>
-  <div class="logo-text">
-    <div class="brand">FULL ARCH BUSINESS UNIT</div>
-    <div class="brand-sub">Engineering Project Portfolio</div>
+<!-- CLEARPATH OS — STANDARD MODULE HEADER -->
+<header class="cpx-header">
+  <!-- LEFT — brand lockup + module title (FIXED) -->
+  <div class="cpx-brandgroup">
+    <div class="cpx-logostack">
+      <img class="cpx-clearpath" src="logos/clearpath-black.png" alt="ClearPath">
+      <span class="cpx-os">Operating System</span>
+    </div>
+    <span class="cpx-divider"></span>
+    <span class="cpx-module">NPI Module</span>
   </div>
-  <div class="topbar-title">🚀 NPI Project Tracker</div>
-</div>
+  <!-- MIDDLE — designer slot -->
+  <div class="cpx-slot">
+    <span class="cpx-bu-label">Full Arch Business Unit · Engineering Project Portfolio</span>
+  </div>
+  <!-- RIGHT — Spectrum Killian endorsement (FIXED) -->
+  <img class="cpx-sk" src="logos/spectrum-killian-stacked-color.png" alt="Spectrum Killian">
+</header>
 
 <div class="container">
 
   <div class="hero">
     <div>
       <div class="hero-title">New Product Introduction</div>
-      <div class="hero-name">🚀 Engineering Project Funnel</div>
+      <div class="hero-name">Engineering Project Funnel</div>
     </div>
     <div class="hero-actions">
       <button class="btn btn-primary" onclick="openCardModal()">+ Add Project</button>
@@ -189,29 +234,35 @@ html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white
   <div class="filters">
     <div class="filter-group">
       <span class="lbl">Category</span>
-      <span class="chip active" data-filter="cat" data-val="">All</span>
-      <span class="chip" data-filter="cat" data-val="Product Development">Product Dev</span>
-      <span class="chip" data-filter="cat" data-val="Innovation - New Platform">Innov · New</span>
-      <span class="chip" data-filter="cat" data-val="Innovation - Advanced Capability">Innov · Adv</span>
-      <span class="chip" data-filter="cat" data-val="Value Engineering">Value Eng</span>
+      <select class="filter-select" onchange="setFilter('cat', this.value)">
+        <option value="">All</option>
+        <option value="Product Development">Product Dev</option>
+        <option value="Innovation - New Platform">Innov · New</option>
+        <option value="Innovation - Advanced Capability">Innov · Adv</option>
+        <option value="Value Engineering">Value Eng</option>
+      </select>
     </div>
     <div class="filter-group">
-      <span class="lbl">BU</span>
-      <span class="chip active" data-filter="bu" data-val="">All</span>
-      <span class="chip" data-filter="bu" data-val="C&amp;B">C&amp;B</span>
-      <span class="chip" data-filter="bu" data-val="Removable">Removable</span>
-      <span class="chip" data-filter="bu" data-val="Full Arch">Full Arch</span>
-      <span class="chip" data-filter="bu" data-val="Cross-BU">Cross-BU</span>
+      <span class="lbl">Business Unit</span>
+      <select class="filter-select" onchange="setFilter('bu', this.value)">
+        <option value="">All</option>
+        <option value="C&amp;B">C&amp;B</option>
+        <option value="Removable">Removable</option>
+        <option value="Full Arch">Full Arch</option>
+        <option value="Cross-BU">Cross-BU</option>
+      </select>
     </div>
     <div class="filter-group">
       <span class="lbl">Quarter</span>
-      <span class="chip active" data-filter="qtr" data-val="">All</span>
-      <span class="chip" data-filter="qtr" data-val="Q1">Q1</span>
-      <span class="chip" data-filter="qtr" data-val="Q2">Q2</span>
-      <span class="chip" data-filter="qtr" data-val="Q3">Q3</span>
-      <span class="chip" data-filter="qtr" data-val="Q4">Q4</span>
+      <select class="filter-select" onchange="setFilter('qtr', this.value)">
+        <option value="">All</option>
+        <option value="Q1">Q1</option>
+        <option value="Q2">Q2</option>
+        <option value="Q3">Q3</option>
+        <option value="Q4">Q4</option>
+      </select>
     </div>
-    <input class="search-box" id="search-box" type="text" placeholder="🔍 Search project name or strategy…" oninput="renderBoard()">
+    <input class="search-box" id="search-box" type="text" placeholder="Search project name or strategy…" oninput="renderBoard()">
     <div class="legend">
       <div class="item"><span class="swatch" style="background:var(--cat-pd)"></span>Product Dev</div>
       <div class="item"><span class="swatch" style="background:var(--cat-inew)"></span>Innov · New</div>
@@ -223,7 +274,7 @@ html,body{height:100%;font-family:'Barlow',sans-serif;background:var(--off-white
   <div class="kanban" id="kanban"></div>
 
   <div class="empty-board" id="empty-board" style="display:none">
-    <div class="icon">📋</div>
+    <div class="icon"></div>
     <div>No projects yet. Click "Load Sample Data" above to seed the board with the projects from your roadmap, or "Add Project" to start fresh.</div>
   </div>
 </div>
@@ -475,17 +526,10 @@ function renderCard(p){
 /* ════════════════════════════════════════════════════════════
    FILTERS
 ════════════════════════════════════════════════════════════ */
-document.addEventListener('click', e => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  const filter = chip.dataset.filter;
-  if (!filter) return;
-  // toggle active state within the same filter group
-  document.querySelectorAll(`.chip[data-filter="${filter}"]`).forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  filters[filter] = chip.dataset.val || '';
+function setFilter(key, val){
+  filters[key] = val || '';
   renderBoard();
-});
+}
 
 /* ════════════════════════════════════════════════════════════
    CARD MODAL
