@@ -541,6 +541,10 @@ textarea.form-input{min-height:80px;resize:vertical}
 .bu-hm-cell.selected { border-color:var(--killian-blue); border-width:2px; box-shadow:0 0 0 2px rgba(24,130,199,.25); }
 .bu-hm-date { font-size:9px; font-weight:500; opacity:.85; line-height:1; }
 .bu-hm-val { font-size:10px; font-weight:800; line-height:1; margin-top:2px; }
+/* Period buckets (week/month/quarter/year) — wider, label + value */
+.bu-hm-cell.period { aspect-ratio:auto; min-height:46px; padding:6px 4px; gap:3px; }
+.bu-hm-plabel { font-size:10px; font-weight:600; opacity:.9; line-height:1; text-align:center; }
+.bu-hm-cell.period .bu-hm-val { font-size:12px; margin-top:0; }
 .bu-heatmap-legend {
   display:flex; align-items:center; justify-content:center; gap:6px;
   margin-top:8px; font-size:9px; color:var(--muted); flex-wrap:wrap;
@@ -1042,7 +1046,7 @@ textarea.form-input{min-height:80px;resize:vertical}
       <select class="topbar-bu-select" id="bu-select" onchange="setBU(this.value)" title="Choose business unit">
         <option value="full-arch">Full Arch</option>
         <option value="crown-bridge">Crown &amp; Bridge</option>
-        <option value="digital-product">Digital Product</option>
+        <option value="digital-product">Printed Product</option>
         <option value="analog-dentures">Analog Dentures</option>
       </select>
     </div>
@@ -2472,7 +2476,7 @@ textarea.form-input{min-height:80px;resize:vertical}
       <span class="collapse-chevron">▼</span>
     </div>
     <div class="collapse-body" style="padding:14px">
-      <div class="bu-ad-note" id="bu-ad-note" style="display:none">Note: Analog / Digital is a custom AOX split and is <strong>not</strong> part of the ClearPath OS metrics standard. The large figure is the standard business-unit total; Analog and Digital are shown as supplementary detail.</div>
+      <div class="bu-ad-note" id="bu-ad-note" style="display:none">Note: this is an <strong>L2 business unit</strong>. The current data warehouse only exposes <strong>Revenue, Quality, and Remake</strong> at this level (via <code>daily_revenue_l2</code> / <code>remake_rate_daily_l2</code>). <strong>OTD, TAT, and Bookings</strong> exist only at the L1 level, so they show <strong>n/a</strong> here until an L2 view is added.</div>
       <div class="otd-grid">
         <div class="otd-kpi"><div class="otd-kval" id="h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-ad" id="ad-revenue"></div><div class="otd-target" id="target-revenue">Target: —</div><div class="trend-badge" id="trend-revenue" style="display:none"></div></div>
         <div class="otd-kpi"><div class="otd-kval" id="h-bookings">—</div><div class="otd-klbl">Bookings</div><div class="otd-ad" id="ad-bookings"></div><div class="otd-target" id="target-bookings">Target: —</div><div class="trend-badge" id="trend-bookings" style="display:none"></div></div>
@@ -4102,7 +4106,7 @@ function otdExport() {
 const BU_LABELS = {
   'full-arch':       'Full Arch',
   'crown-bridge':    'Crown & Bridge',
-  'digital-product': 'Digital Product',
+  'digital-product': 'Printed Product',
   'analog-dentures': 'Analog Dentures'
 };
 function setBU(bu){
@@ -4447,21 +4451,25 @@ async function saveTarget(op, inputEl) {
    by date + business unit. EDIT THE MAPPING BELOW to match your
    organization's data taxonomy.
 ════════════════════════════════════════════ */
-// Each tab maps to one or more canonical product BU L1 values (the standard's
-// axis). `showAD` tabs additionally surface the analog/digital breakdown, which
-// is NOT part of the source-of-truth standard and is served by the module's
-// own v_aox_* views (see sql/2026-06-05_aox_standard_views.sql).
+// Each tab maps to a product BU axis (the source-of-truth taxonomy):
+//   axis 'l1' → business_unit_l1 (served by existing canonical L1 views)
+//   axis 'l2' → business_unit_l2 (operational BUs per huddle_business_units),
+//               served by the module's v_aox_*_l2ad views.
+// `showAD` tabs also surface the analog/digital sub-split (NON-standard axis),
+// shown as smaller secondary numbers inside the L2 BU.
 const BU_DATA_FILTER = {
-  'full-arch':       { l1: ['Full Arch'],                      showAD: false },
-  'crown-bridge':    { l1: ['Restorative', 'High Esthetics'],  showAD: false },
-  'digital-product': { l1: ['Full Arch'],                      showAD: true  },
-  'analog-dentures': { l1: ['Removable'],                      showAD: true  }
+  'full-arch':       { axis: 'l1', keys: ['Full Arch'],       showAD: false },
+  'crown-bridge':    { axis: 'l2', keys: ['Crown & Bridge'],  showAD: true  },
+  'digital-product': { axis: 'l2', keys: ['Printed Product'], showAD: true  }, // tab labeled "Printed Product"
+  'analog-dentures': { axis: 'l2', keys: ['Analog Denture'],  showAD: true  }
 };
-// PostgREST in.() list of business_unit_l1 values (quoted for spaces)
-function l1InFilter(l1list) {
-  const list = (l1list || []).map(v => '"' + v.replace(/"/g, '\\"') + '"').join(',');
-  return '&business_unit_l1=in.(' + encodeURIComponent(list) + ')';
+// PostgREST in.() list for business_unit_l1 or business_unit_l2 (quoted for spaces)
+function axisInFilter(axis, keys) {
+  const col = axis === 'l2' ? 'business_unit_l2' : 'business_unit_l1';
+  const list = (keys || []).map(v => '"' + v.replace(/"/g, '\\"') + '"').join(',');
+  return '&' + col + '=in.(' + encodeURIComponent(list) + ')';
 }
+function l1InFilter(l1list) { return axisInFilter('l1', l1list); }
 function blankAcc() {
   return { shipped:0, onTime:0, totalRemake:0, labFault:0, tatSum:0, tatW:0, revenue:0, bookings:0 };
 }
@@ -4520,52 +4528,65 @@ async function loadCanonicalAcc(start, endRatio, endRevenue, l1list) {
   return a;
 }
 
-// One analog/digital slice from the module's v_aox_* views (NON-standard axis).
-async function loadADAcc(start, endRatio, endRevenue, l1list, ad) {
-  const l1In = l1InFilter(l1list);
-  const adF  = '&analog_digital=eq.' + encodeURIComponent(ad);
-  const [health, rev, book] = await Promise.all([
-    sbFetch(`v_aox_bu_health_ad?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}${adF}&limit=10000`),
-    sbFetch(`v_aox_bu_revenue_ad?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}${adF}&limit=10000`),
-    sbFetch(`v_aox_bu_bookings_ad?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}${adF}&limit=10000`)
+// L2 operational-BU metrics from EXISTING views only (no new objects):
+//   daily_revenue_l2     → revenue
+//   remake_rate_daily_l2 → shipped, total remakes, lab-fault remakes
+// OTD / TAT / Bookings have NO L2-level view in the current warehouse, so they
+// stay unavailable at L2 (see metricAvailableForBU / the L2 note).
+async function loadL2Acc(start, endRatio, endRevenue, l2keys) {
+  const l2In = axisInFilter('l2', l2keys);
+  const [rl2, rev] = await Promise.all([
+    sbFetch(`remake_rate_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`daily_revenue_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
   ]);
   const a = blankAcc();
-  (health || []).forEach(r => {
-    const sc = +(r.shipped_case_count||0);
-    a.shipped += sc; a.onTime += +(r.on_time_case_count||0);
-    a.totalRemake += +(r.remake_case_count||0); a.labFault += +(r.lab_fault_remake_count||0);
-    if (r.avg_tat_business_days != null && sc > 0) { a.tatSum += parseFloat(r.avg_tat_business_days)*sc; a.tatW += sc; }
+  (rl2 || []).forEach(r => {
+    a.shipped     += +(r.shipped_case_count||0);
+    a.totalRemake += +(r.remake_case_count||0);
+    a.labFault    += +(r.lab_fault_remake_count||0);
   });
-  (rev  || []).forEach(r => { a.revenue  += parseFloat(r.revenue)  || 0; });
-  (book || []).forEach(r => { a.bookings += parseFloat(r.bookings) || 0; });
+  (rev || []).forEach(r => { a.revenue += parseFloat(r.revenue) || 0; });
   return a;
 }
+// L2 display metrics. OTD / TAT / Bookings are null (no L2 source exists).
+function metricsFromAccL2(a) {
+  return {
+    revenue:    a.revenue,
+    bookings:   null,
+    otdPct:     null,
+    qualityPct: a.totalRemake > 0 ? Math.round((1 - a.labFault / a.totalRemake) * 100) : null,
+    remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
+    tatAvg:     null,
+    total:      a.shipped
+  };
+}
+// Which metrics exist for the active BU. L1 tabs: all six. L2 tabs: only the
+// three that have an existing L2 view.
+function metricAvailableForBU(metric) {
+  const f = BU_DATA_FILTER[currentBU];
+  if (!f || f.axis !== 'l2') return true;
+  return metric === 'revenue' || metric === 'quality' || metric === 'remake';
+}
 
-// Returns the L1 standard metrics plus, on showAD tabs, an `.ad` breakdown
-// { analog: {...}, digital: {...} } for the smaller secondary numbers.
+// Returns the BU's metrics. L1 tabs use the canonical views; L2 (operational-BU)
+// tabs use the v_aox_*_l2ad views and add an `.ad` analog/digital sub-split.
 async function fetchBUMetrics(start, end) {
-  const filter = BU_DATA_FILTER[currentBU] || { l1: null, showAD: false };
+  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l1', keys: ['Full Arch'], showAD: false };
   const today = localToday();
   const yest  = computeYest(today, null);
   const endRatio   = end < yest  ? end : yest;   // OTD / TAT / Quality / Remake
   const endRevenue = end < today ? end : today;  // Revenue / Bookings
 
-  const l1Acc = await loadCanonicalAcc(start, endRatio, endRevenue, filter.l1);
-  const out = metricsFromAcc(l1Acc);
-
-  if (filter.showAD) {
-    // The v_aox_* views are a pending migration (Scott sign-off). If they're not
-    // live yet, still show the L1 standard numbers and just omit the A/D detail.
-    try {
-      const [analog, digital] = await Promise.all([
-        loadADAcc(start, endRatio, endRevenue, filter.l1, 'Analog'),
-        loadADAcc(start, endRatio, endRevenue, filter.l1, 'Digital')
-      ]);
-      out.ad = { analog: metricsFromAcc(analog), digital: metricsFromAcc(digital) };
-    } catch (e) {
-      console.warn('Analog/Digital breakdown unavailable (needs v_aox_* migration):', e.message);
-    }
+  if (filter.axis === 'l1') {
+    // Standard L1 BU from existing canonical views.
+    return metricsFromAcc(await loadCanonicalAcc(start, endRatio, endRevenue, filter.keys));
   }
+
+  // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product) from
+  // existing L2 views. Revenue / Quality / Remake only; OTD / TAT / Bookings have
+  // no L2 source and render as "n/a".
+  const out = metricsFromAccL2(await loadL2Acc(start, endRatio, endRevenue, filter.keys));
+  out.l2limited = true;
   return out;
 }
 
@@ -4721,19 +4742,16 @@ function renderHealthTiles(m) {
   updateTrendBadge('remake',   m.remakePct,  tRmk, false); // lower remake is better
   updateTrendBadge('tat',      m.tatAvg,     tTat, false); // lower TAT is better
 
-  // ── Analog/Digital supplementary split (showAD tabs only) ──
+  // ── L2 tabs: mark metrics with no L2 source as "n/a", and show a note ──
+  ['revenue','bookings','otd','quality','remake','tat'].forEach(k => {
+    if (!metricAvailableForBU(k)) {
+      const el = g('h-' + k);
+      if (el) { el.textContent = 'n/a'; el.style.color = '#9ca3af'; el.title = 'Not available at the L2 BU level in the current data warehouse'; }
+    }
+    const adEl = g('ad-' + k); if (adEl) adEl.innerHTML = '';   // no analog/digital split in existing-views mode
+  });
   const note = g('bu-ad-note');
-  const showAD = !!m.ad;
-  if (note) note.style.display = showAD ? '' : 'none';
-  const adRow = (metric, key) => {
-    const el = g('ad-' + metric); if (!el) return;
-    if (!showAD) { el.innerHTML = ''; return; }
-    const a = fmtMetricSmall(metric, m.ad.analog[key]);
-    const d = fmtMetricSmall(metric, m.ad.digital[key]);
-    el.innerHTML = `<span class="ad-k">A</span> ${a}<span class="ad-sep">·</span><span class="ad-k">D</span> ${d}`;
-  };
-  adRow('revenue','revenue'); adRow('bookings','bookings'); adRow('otd','otdPct');
-  adRow('quality','qualityPct'); adRow('remake','remakePct'); adRow('tat','tatAvg');
+  if (note) note.style.display = m.l2limited ? '' : 'none';
 
   attachHeatHandlers();
 }
@@ -4752,9 +4770,77 @@ function fmtMetricSmall(metric, v) {
 /* ════════════════════════════════════════════
    BU HEALTH HEAT MAP (hover popover on tiles)
 ════════════════════════════════════════════ */
-const HEAT_DAYS = 30;
-let _heatCache = { bu: null, data: null, loadedAt: 0 };
+const HEAT_DAYS = 30;                                    // 'day' range window
+const HEAT_PERIOD_COUNT = { week: 4, month: 12, quarter: 4, year: 3 };
+let _heatCache = { bu: null, range: null, data: null, loadedAt: 0 };
 let _heatHideTimer = null;
+
+// First day (YYYY-MM-DD) of the heat window for a range, anchored on `anchor` (today).
+function heatWindowStart(range, anchor) {
+  const a = new Date(anchor);
+  let s;
+  if (range === 'week') {
+    const wd = (a.getDay() + 6) % 7;                     // Mon=0
+    s = new Date(a); s.setDate(a.getDate() - wd - 7 * (HEAT_PERIOD_COUNT.week - 1));
+  } else if (range === 'month') {
+    s = new Date(a.getFullYear(), a.getMonth() - (HEAT_PERIOD_COUNT.month - 1), 1);
+  } else if (range === 'quarter') {
+    const q = Math.floor(a.getMonth() / 3);
+    s = new Date(a.getFullYear(), (q - (HEAT_PERIOD_COUNT.quarter - 1)) * 3, 1);
+  } else if (range === 'year') {
+    s = new Date(a.getFullYear() - (HEAT_PERIOD_COUNT.year - 1), 0, 1);
+  } else {
+    s = new Date(a); s.setDate(a.getDate() - HEAT_DAYS + 1);
+  }
+  return toISO(s);
+}
+
+// Period bucket {key, label, rep(date for click)} for an ISO date under a range.
+function periodKeyOf(iso, range) {
+  const dt = new Date(iso + 'T12:00:00');
+  if (range === 'week') {
+    const wd = (dt.getDay() + 6) % 7; const mon = new Date(dt); mon.setDate(dt.getDate() - wd);
+    return { key: toISO(mon), label: (mon.getMonth() + 1) + '/' + mon.getDate(), rep: toISO(mon) };
+  }
+  if (range === 'month') {
+    const k = dt.getFullYear() + '-' + pad2(dt.getMonth() + 1);
+    return { key: k, label: dt.toLocaleDateString('en-US', { month: 'short' }), rep: k + '-15' };
+  }
+  if (range === 'quarter') {
+    const q = Math.floor(dt.getMonth() / 3) + 1;
+    return { key: dt.getFullYear() + '-Q' + q, label: 'Q' + q + " '" + String(dt.getFullYear()).slice(2),
+             rep: dt.getFullYear() + '-' + pad2((q - 1) * 3 + 2) + '-15' };
+  }
+  return { key: String(dt.getFullYear()), label: String(dt.getFullYear()), rep: dt.getFullYear() + '-07-01' };
+}
+
+// Aggregate per-day rows into the most-recent N period buckets (sums raw fields,
+// so METRIC_DEFS.valueFn computes the correct period ratio/avg). 'day' = no-op.
+function heatBucketize(dayArr, range) {
+  if (range === 'day' || !dayArr) return dayArr;
+  const today = localToday();
+  const groups = {}, order = [];
+  dayArr.forEach(d => {
+    const p = periodKeyOf(d.day, range);
+    let g = groups[p.key];
+    if (!g) {
+      const rep = p.rep > today ? today : p.rep;          // never click into the future
+      g = groups[p.key] = { day: rep, label: p.label, _key: p.key,
+        shipped_case_count: 0, on_time_case_count: 0, remake_case_count: 0,
+        lab_fault_remake_count: 0, tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
+      order.push(p.key);
+    }
+    g.shipped_case_count     += d.shipped_case_count;
+    g.on_time_case_count     += d.on_time_case_count;
+    g.remake_case_count      += d.remake_case_count;
+    g.lab_fault_remake_count += d.lab_fault_remake_count;
+    g.tat_sum += d.tat_sum; g.tat_n += d.tat_n;
+    g.revenue += d.revenue; g.bookings += d.bookings;
+  });
+  const arr = order.map(k => groups[k]);
+  arr.forEach(g => { g.avg_tat_business_days = g.tat_n > 0 ? g.tat_sum / g.tat_n : null; });
+  return arr.slice(-(HEAT_PERIOD_COUNT[range] || arr.length));
+}
 
 const METRIC_DEFS = {
   revenue: {
@@ -4833,69 +4919,90 @@ function pickTextColor(hex) {
 }
 
 async function loadHeatData() {
-  // Cache for 60s per BU to avoid pounding the views
-  if (_heatCache.bu === currentBU && _heatCache.data && Date.now() - _heatCache.loadedAt < 60000) {
+  const range = otdRange || 'day';
+  // Cache for 60s per (BU, range) to avoid pounding the views
+  if (_heatCache.bu === currentBU && _heatCache.range === range && _heatCache.data && Date.now() - _heatCache.loadedAt < 60000) {
     return _heatCache.data;
   }
-  // Range: last HEAT_DAYS days ending today (or selected date, whichever is later)
+  // Window sized to the active range: Day=30 days, Week=4 wks, Month=12 mo,
+  // Quarter=4 qtrs, Year=3 yrs (data starts 2024-04). Daily rows are fetched
+  // across the window, then aggregated into period buckets at render time.
   const endDate = new Date(); // today
-  const startDate = new Date(endDate);
-  startDate.setDate(endDate.getDate() - HEAT_DAYS + 1);
-  const startStr = startDate.toISOString().slice(0,10);
+  const startStr = heatWindowStart(range, endDate);
 
-  // Heat map always shows the L1 standard metric (matches the big tile number),
-  // from the EXISTING canonical views. Split tabs show their L1 total here too.
-  const filter = BU_DATA_FILTER[currentBU] || { l1: null, showAD: false };
-  const l1In = l1InFilter(filter.l1);
+  // L1 tabs use canonical views; L2 tabs use the existing L2 views.
+  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l1', keys: ['Full Arch'] };
+  const inF = axisInFilter(filter.axis, filter.keys);
 
   try {
-    const [otd, tat, rl2, revenue, bookings] = await Promise.all([
-      sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
-      sbFetch(`v_tat_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
-      sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${l1In}&limit=10000`),
-      sbFetch(`v_daily_revenue_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
-      sbFetch(`v_daily_bookings_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`)
-    ]);
-
-    // Build per-day buckets for the full HEAT_DAYS window. Field names mirror the
+    // One bucket per calendar day across the window. Field names mirror the
     // standard view columns so METRIC_DEFS.valueFn reads them directly.
     const byDay = {};
-    for (let i = 0; i < HEAT_DAYS; i++) {
-      const d = new Date(endDate); d.setDate(endDate.getDate() - HEAT_DAYS + 1 + i);
-      const key = d.toISOString().slice(0,10);
-      byDay[key] = { day: key, shipped_case_count: 0, on_time_case_count: 0,
-                     remake_case_count: 0, lab_fault_remake_count: 0,
-                     tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
+    {
+      const d = new Date(startStr + 'T12:00:00'), end = new Date(toISO(endDate) + 'T12:00:00');
+      while (d <= end) {
+        const key = toISO(d);
+        byDay[key] = { day: key, shipped_case_count: 0, on_time_case_count: 0,
+                       remake_case_count: 0, lab_fault_remake_count: 0,
+                       tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
+        d.setDate(d.getDate() + 1);
+      }
     }
-    (otd || []).forEach(r => {
-      const d = byDay[r.report_date]; if (!d) return;
-      d.shipped_case_count += +(r.shipped_case_count || 0);
-      d.on_time_case_count += +(r.on_time_case_count || 0);
-    });
-    (tat || []).forEach(r => {
+    const addHealth = r => {
       const d = byDay[r.report_date]; if (!d) return;
       const sc = +(r.shipped_case_count || 0);
-      if (r.avg_tat_business_days != null && sc > 0) {
-        d.tat_sum += parseFloat(r.avg_tat_business_days) * sc;
-        d.tat_n   += sc;
-      }
-    });
-    (rl2 || []).forEach(r => {
-      const d = byDay[r.report_date]; if (!d) return;
+      d.shipped_case_count     += sc;
+      d.on_time_case_count     += +(r.on_time_case_count || 0);
       d.remake_case_count      += +(r.remake_case_count || 0);
       d.lab_fault_remake_count += +(r.lab_fault_remake_count || 0);
-    });
-    (revenue || []).forEach(r => {
-      const d = byDay[r.report_date]; if (!d) return;
-      d.revenue += parseFloat(r.revenue) || 0;
-    });
-    (bookings || []).forEach(r => {
-      const d = byDay[r.report_date]; if (!d) return;
-      d.bookings += parseFloat(r.bookings) || 0;
-    });
+      if (r.avg_tat_business_days != null && sc > 0) { d.tat_sum += parseFloat(r.avg_tat_business_days)*sc; d.tat_n += sc; }
+    };
+    const addRev  = r => { const d = byDay[r.report_date]; if (d) d.revenue  += parseFloat(r.revenue)  || 0; };
+    const addBook = r => { const d = byDay[r.report_date]; if (d) d.bookings += parseFloat(r.bookings) || 0; };
+
+    if (filter.axis === 'l2') {
+      // Existing L2 views only: Revenue + Quality/Remake. (OTD/TAT/Bookings heat
+      // is blocked for L2 tabs in showHeatMap — no L2 source.)
+      const [rl2, revenue] = await Promise.all([
+        sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`daily_revenue_l2?report_date=gte.${startStr}${inF}&limit=10000`)
+      ]);
+      (rl2 || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        d.shipped_case_count     += +(r.shipped_case_count || 0);
+        d.remake_case_count      += +(r.remake_case_count || 0);
+        d.lab_fault_remake_count += +(r.lab_fault_remake_count || 0);
+      });
+      (revenue || []).forEach(addRev);
+    } else {
+      const [otd, tat, rl2, revenue, bookings] = await Promise.all([
+        sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_tat_daily_by_bu?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_daily_revenue_by_bu?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_daily_bookings_by_bu?report_date=gte.${startStr}${inF}&limit=10000`)
+      ]);
+      (otd || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        d.shipped_case_count += +(r.shipped_case_count || 0);
+        d.on_time_case_count += +(r.on_time_case_count || 0);
+      });
+      (tat || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        const sc = +(r.shipped_case_count || 0);
+        if (r.avg_tat_business_days != null && sc > 0) { d.tat_sum += parseFloat(r.avg_tat_business_days)*sc; d.tat_n += sc; }
+      });
+      (rl2 || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        d.remake_case_count      += +(r.remake_case_count || 0);
+        d.lab_fault_remake_count += +(r.lab_fault_remake_count || 0);
+      });
+      (revenue || []).forEach(addRev);
+      (bookings || []).forEach(addBook);
+    }
     Object.values(byDay).forEach(d => { d.avg_tat_business_days = d.tat_n > 0 ? d.tat_sum / d.tat_n : null; });
     const arr = Object.values(byDay).sort((a,b) => a.day.localeCompare(b.day));
-    _heatCache = { bu: currentBU, data: arr, loadedAt: Date.now() };
+    _heatCache = { bu: currentBU, range, data: arr, loadedAt: Date.now() };
     return arr;
   } catch (e) {
     console.error('Heat map load failed', e);
@@ -4929,13 +5036,15 @@ async function showHeatMap(metric) {
   }
 
   document.getElementById('bu-heatmap-title').textContent = (BU_LABELS[currentBU] || 'Full Arch') + ' — ' + def.label;
-  document.getElementById('bu-heatmap-sub').textContent = def.sub;
+  const gran = { day: 'Daily (30 days)', week: 'Weekly (4 weeks)', month: 'Monthly (12 months)',
+                 quarter: 'Quarterly (4 quarters)', year: 'Yearly' }[otdRange || 'day'] || 'Daily';
+  document.getElementById('bu-heatmap-sub').textContent = gran + ' — click to jump';
   pop.dataset.metric = metric;
   pop.classList.add('show');
   pop.setAttribute('aria-hidden', 'false');
 
   const grid2 = document.getElementById('bu-heatmap-grid');
-  if (!_heatCache.data || _heatCache.bu !== currentBU) {
+  if (!_heatCache.data || _heatCache.bu !== currentBU || _heatCache.range !== (otdRange || 'day')) {
     grid2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:13px">Loading…</div>';
   }
   const data = await loadHeatData();
@@ -4945,40 +5054,53 @@ async function showHeatMap(metric) {
 }
 
 function renderHeatMap(grid, data, metric) {
+  if (!metricAvailableForBU(metric)) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:13px">Not available at the L2 business-unit level in the current data warehouse.</div>';
+    const lg = document.getElementById('bu-heatmap-legend'); if (lg) lg.innerHTML = '';
+    return;
+  }
   if (!data || data.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">No data available.</div>';
     document.getElementById('bu-heatmap-legend').innerHTML = '';
     return;
   }
   const def = METRIC_DEFS[metric];
-  const values = data.map(d => def.valueFn(d)).filter(v => v != null && !isNaN(v));
-  const maxVal = values.length > 0 ? Math.max(...values) : 1;
+  const range = otdRange || 'day';
 
-  const cells = [];
-  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => cells.push(`<div class="bu-hm-day-hd">${d}</div>`));
-  // Pad start so the first date aligns with its weekday
-  const firstDate = new Date(data[0].day + 'T12:00:00');
-  const startPad = (firstDate.getDay() + 6) % 7; // Mon=0
-  for (let i = 0; i < startPad; i++) cells.push('<div></div>');
-
-  data.forEach(d => {
-    const val = def.valueFn(d);
-    const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal);
-    const fg = (val == null || bg === '#f3f4f6') ? '#9ca3af' : pickTextColor(bg);
-    const dateNum = parseInt(d.day.split('-')[2], 10);
-    const isSelected = d.day === otdDate;
-    const isEmpty = val == null;
-    const cls = ['bu-hm-cell']; if (isSelected) cls.push('selected'); if (isEmpty) cls.push('empty');
-    cells.push(
-      `<div class="${cls.join(' ')}" style="background:${bg};color:${fg}" ` +
-      `onclick="heatMapClick('${d.day}')" ` +
-      `title="${d.day}: ${def.fmtFull(val)}">` +
-        `<div class="bu-hm-date">${dateNum}</div>` +
-        `<div class="bu-hm-val">${def.fmtCell(val)}</div>` +
-      `</div>`
-    );
-  });
-  grid.innerHTML = cells.join('');
+  if (range === 'day') {
+    // Daily calendar (weekday-aligned), last 30 days.
+    grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+    const values = data.map(d => def.valueFn(d)).filter(v => v != null && !isNaN(v));
+    const maxVal = values.length > 0 ? Math.max(...values) : 1;
+    const cells = [];
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => cells.push(`<div class="bu-hm-day-hd">${d}</div>`));
+    const firstDate = new Date(data[0].day + 'T12:00:00');
+    const startPad = (firstDate.getDay() + 6) % 7; // Mon=0
+    for (let i = 0; i < startPad; i++) cells.push('<div></div>');
+    data.forEach(d => {
+      const val = def.valueFn(d);
+      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal);
+      const fg = (val == null || bg === '#f3f4f6') ? '#9ca3af' : pickTextColor(bg);
+      const cls = ['bu-hm-cell']; if (d.day === otdDate) cls.push('selected'); if (val == null) cls.push('empty');
+      cells.push(`<div class="${cls.join(' ')}" style="background:${bg};color:${fg}" onclick="heatMapClick('${d.day}')" title="${d.day}: ${def.fmtFull(val)}"><div class="bu-hm-date">${parseInt(d.day.split('-')[2],10)}</div><div class="bu-hm-val">${def.fmtCell(val)}</div></div>`);
+    });
+    grid.innerHTML = cells.join('');
+  } else {
+    // Period buckets: 4 weeks / 12 months / 4 quarters / 3 years.
+    const buckets = heatBucketize(data, range);
+    const values = buckets.map(b => def.valueFn(b)).filter(v => v != null && !isNaN(v));
+    const maxVal = values.length > 0 ? Math.max(...values) : 1;
+    const cols = Math.min(buckets.length || 1, 4);
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    const selKey = periodKeyOf(otdDate, range).key;
+    grid.innerHTML = buckets.map(b => {
+      const val = def.valueFn(b);
+      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal);
+      const fg = (val == null || bg === '#f3f4f6') ? '#9ca3af' : pickTextColor(bg);
+      const cls = ['bu-hm-cell','period']; if (b._key === selKey) cls.push('selected'); if (val == null) cls.push('empty');
+      return `<div class="${cls.join(' ')}" style="background:${bg};color:${fg}" onclick="heatMapClick('${b.day}')" title="${b.label}: ${def.fmtFull(val)}"><div class="bu-hm-plabel">${b.label}</div><div class="bu-hm-val">${def.fmtCell(val)}</div></div>`;
+    }).join('');
+  }
 
   // Legend — ClearPath OS brand only (Killian Blue good / brand red bad).
   const legend = document.getElementById('bu-heatmap-legend');
