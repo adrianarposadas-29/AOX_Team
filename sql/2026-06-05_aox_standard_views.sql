@@ -4,22 +4,22 @@
 -- need a NEW view, propose the SQL first, get sign-off, THEN apply via
 -- apply_migration. Name new views v_*, prefixed with the module name.
 --
--- WHY THESE EXIST (and why nothing else is created):
--- The AOX dashboard's metrics now read the EXISTING canonical views per the
--- standard (v_otd_daily_by_bu, v_tat_daily_by_bu, v_remake_rate_daily_by_bu,
--- remake_rate_daily_l2, v_daily_revenue_by_bu, v_daily_bookings_by_bu), keyed
--- by business_unit_l1. Those reconcile with the COO board and need no changes.
+-- WHY THESE EXIST
+-- The AOX board's three operational BUs — Crown & Bridge, Analog Denture, and
+-- Printed Product (the tab labeled "Digital Product") — are defined by product
+-- **business_unit_l2** (the source-of-truth axis behind huddle_business_units),
+-- NOT by business_unit_l1 or the analog/digital flag. Verified live 2026-06-05:
+--   Restorative L2 = {Crown & Bridge, Implant}
+--   Removable  L2 = {Analog Denture, Nightguard, Printed Product}
+-- The canonical daily views split by L1 only (plus remake_rate_daily_l2 /
+-- daily_revenue_l2 which carry L2). There is no canonical L2-level view for
+-- OTD / TAT / Bookings, and none for the analog/digital sub-split. Per rule #5
+-- we add three NEW module-prefixed views, grouped by L1 × L2 × analog_digital.
 --
--- The ONLY thing the standard does not provide is an analog/digital breakdown.
--- Verified live 2026-06-05: analog/digital is a real independent axis on
--- public."Cases" ("Analog Digital") that is NOT encoded in business_unit_l1 or
--- business_unit_l2 (e.g. Full Arch has 8,440 Digital + 1,133 Analog cases; its
--- L2 is just "Full Arch"). The AOX digital-product / analog-dentures tabs need
--- it, so per rule #5 we add three NEW module-prefixed views below.
---
--- These mirror the canonical fact logic VERBATIM and add ONE group key
--- (analog_digital), so summing across analog_digital reconciles back to the
--- canonical L1 views by construction (same facts, same filters).
+-- RECONCILIATION (by construction — same facts, same filters as canonical):
+--   sum over analog_digital, for a given L2  == that L2's totals
+--       (matches daily_revenue_l2 / remake_rate_daily_l2 for $ / remake / quality)
+--   sum over L2 and analog_digital, for an L1 == the canonical L1 by_bu views
 -- The existing bu_health_daily / bu_revenue_daily are left UNTOUCHED.
 --
 -- ASSUMPTION to confirm with Scott: public."Cases" is one row per "Case Number"
@@ -27,17 +27,15 @@
 -- Project: asdunkqodixbhbohxtuq (SK Public).
 -- ============================================================================
 
--- Reusable analog/digital lookup (one row per case)
---   (inlined in each view below as a DISTINCT subquery)
-
 -- ---------------------------------------------------------------------------
--- 1) v_aox_bu_health_ad — OTD / TAT / Remake / lab-fault Quality, by a/d
---    Sum across analog_digital == v_otd_daily_by_bu / v_remake_rate_daily_by_bu.
+-- 1) v_aox_bu_health_l2ad — OTD / TAT / Remake / lab-fault Quality
+--    by report_date × business_unit_l1 × business_unit_l2 × analog_digital
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW public.v_aox_bu_health_ad AS
+CREATE OR REPLACE VIEW public.v_aox_bu_health_l2ad AS
 SELECT
     fcs.report_date,
     fcs.business_unit_l1,
+    fcs.business_unit_l2,
     ad.analog_digital,
     count(DISTINCT fcs.case_number)::numeric AS shipped_case_count,
     count(DISTINCT CASE WHEN fcs.is_on_time_delivery IS TRUE
@@ -57,18 +55,18 @@ WHERE fcs.report_date IS NOT NULL
   AND fcs.report_date >= '2024-04-01'::date
   AND fcs.business_unit_l1 IS NOT NULL
   AND btrim(fcs.business_unit_l1) <> ''
-GROUP BY fcs.report_date, fcs.business_unit_l1, ad.analog_digital;
+GROUP BY fcs.report_date, fcs.business_unit_l1, fcs.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_health_ad TO anon;
+GRANT SELECT ON public.v_aox_bu_health_l2ad TO anon;
 
 -- ---------------------------------------------------------------------------
--- 2) v_aox_bu_revenue_ad — revenue by invoice date, by a/d
---    Sum across analog_digital == v_daily_revenue_by_bu.
+-- 2) v_aox_bu_revenue_l2ad — revenue by invoice date × L1 × L2 × a/d
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW public.v_aox_bu_revenue_ad AS
+CREATE OR REPLACE VIEW public.v_aox_bu_revenue_l2ad AS
 SELECT
     fil.report_date,
     fil.business_unit_l1,
+    fil.business_unit_l2,
     ad.analog_digital,
     sum(fil.line_revenue) AS revenue
 FROM reporting.fact_invoice_line fil
@@ -80,19 +78,19 @@ WHERE fil.report_date IS NOT NULL
   AND fil.report_date >= '2024-04-01'::date
   AND fil.business_unit_l1 IS NOT NULL
   AND btrim(fil.business_unit_l1) <> ''
-GROUP BY fil.report_date, fil.business_unit_l1, ad.analog_digital;
+GROUP BY fil.report_date, fil.business_unit_l1, fil.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_revenue_ad TO anon;
+GRANT SELECT ON public.v_aox_bu_revenue_l2ad TO anon;
 
 -- ---------------------------------------------------------------------------
--- 3) v_aox_bu_bookings_ad — bookings by received date, by a/d
+-- 3) v_aox_bu_bookings_l2ad — bookings by received date × L1 × L2 × a/d
 --    received_date aliased to report_date to match v_daily_bookings_by_bu.
---    Sum across analog_digital == v_daily_bookings_by_bu.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW public.v_aox_bu_bookings_ad AS
+CREATE OR REPLACE VIEW public.v_aox_bu_bookings_l2ad AS
 SELECT
     fil.received_date AS report_date,
     fil.business_unit_l1,
+    fil.business_unit_l2,
     ad.analog_digital,
     sum(fil.line_revenue) AS bookings
 FROM reporting.fact_invoice_line fil
@@ -104,15 +102,20 @@ WHERE fil.received_date IS NOT NULL
   AND fil.received_date >= '2024-04-01'::date
   AND fil.business_unit_l1 IS NOT NULL
   AND btrim(fil.business_unit_l1) <> ''
-GROUP BY fil.received_date, fil.business_unit_l1, ad.analog_digital;
+GROUP BY fil.received_date, fil.business_unit_l1, fil.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_bookings_ad TO anon;
+GRANT SELECT ON public.v_aox_bu_bookings_l2ad TO anon;
 
 -- ============================================================================
--- RECONCILIATION CHECK (run after applying): summing a/d must equal canonical.
---   SELECT round(100*sum(on_time_case_count)/sum(shipped_case_count),1)
---   FROM public.v_aox_bu_health_ad
---   WHERE business_unit_l1='Full Arch'
---     AND report_date BETWEEN '2026-05-01' AND '2026-05-31';   -- expect ~87.2
---   -- compare to v_otd_daily_by_bu for the same L1/period.
+-- RECONCILIATION CHECK (run after applying). Expected (May 2026):
+--   Crown & Bridge : shipped 5544, OTD 91.8%, TAT 4.66, remake 6.7%, rev 518,443
+--   Analog Denture : shipped 1053, OTD 93.0%, TAT 5.92, remake 5.4%, rev 145,500
+--   Printed Product: shipped 4416, OTD 98.9%, TAT 1.24, remake 1.7%, rev 381,730
+--
+--   SELECT business_unit_l2, sum(shipped_case_count) s,
+--          round(100*sum(on_time_case_count)/sum(shipped_case_count),1) otd
+--   FROM public.v_aox_bu_health_l2ad
+--   WHERE business_unit_l2 IN ('Crown & Bridge','Analog Denture','Printed Product')
+--     AND report_date BETWEEN '2026-05-01' AND '2026-05-31'
+--   GROUP BY business_unit_l2;
 -- ============================================================================
