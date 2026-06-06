@@ -410,7 +410,8 @@ textarea.form-input{min-height:80px;resize:vertical}
 .range-btn.active { background:var(--white); color:var(--spectrum-blue); }
 .range-btn:focus { outline:none; box-shadow:0 0 0 2px rgba(255,255,255,.4); }
 .otd-date-lbl { font-size:14px; font-weight:700; color:var(--white); min-width:150px; text-align:center; }
-.otd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.otd-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:20px; }
+@media (max-width:1100px){ .otd-grid { grid-template-columns:repeat(3,1fr); } }
 .otd-kpi { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; border-top:3px solid var(--killian-blue); box-shadow:var(--shadow); text-align:center; position:relative; }
 .otd-kpi.green { border-top-color:#16a34a; }
 .otd-kpi.red { border-top-color:#dc2626; }
@@ -468,8 +469,8 @@ textarea.form-input{min-height:80px;resize:vertical}
   line-height:1.2;
   pointer-events:none;
 }
-.trend-badge.good { background:#ecfdf5; color:#16a34a; border-color:#bbf7d0; }
-.trend-badge.bad  { background:#fef2f2; color:#dc2626; border-color:#fecaca; }
+.trend-badge.good { background:#e8f4fb; color:#1882C7; border-color:#bfe1f5; }
+.trend-badge.bad  { background:#fcecea; color:#E0625A; border-color:#f6cfcb; }
 .trend-badge.flat { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
 /* Small "Target: X" subline at the bottom of each KPI tile */
 .otd-target {
@@ -481,6 +482,15 @@ textarea.form-input{min-height:80px;resize:vertical}
 }
 .otd-target.set { color:var(--spectrum-blue); }
 .otd-target.unset { color:#9ca3af; font-style:italic; font-weight:500; }
+/* Analog/Digital supplementary split (non-standard; shown only on split tabs) */
+.otd-ad { font-size:11px; font-weight:600; color:var(--muted); margin-top:5px; line-height:1.35; }
+.otd-ad .ad-k { color:var(--killian-blue); }
+.otd-ad .ad-sep { color:var(--border); margin:0 5px; }
+.bu-ad-note {
+  font-size:11px; color:var(--muted); background:var(--off-white);
+  border:1px solid var(--border); border-left:3px solid var(--lab-gold);
+  border-radius:6px; padding:8px 11px; margin-bottom:12px; line-height:1.4;
+}
 .bu-heatmap {
   position:absolute; top:100%; left:50%; margin-top:8px;
   width:380px; max-width:calc(100vw - 32px);
@@ -2462,11 +2472,14 @@ textarea.form-input{min-height:80px;resize:vertical}
       <span class="collapse-chevron">▼</span>
     </div>
     <div class="collapse-body" style="padding:14px">
+      <div class="bu-ad-note" id="bu-ad-note" style="display:none">Note: Analog / Digital is a custom AOX split and is <strong>not</strong> part of the ClearPath OS metrics standard. The large figure is the standard business-unit total; Analog and Digital are shown as supplementary detail.</div>
       <div class="otd-grid">
-        <div class="otd-kpi"><div class="otd-kval" id="h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-target" id="target-revenue">Target: —</div><div class="trend-badge" id="trend-revenue" style="display:none"></div></div>
-        <div class="otd-kpi green"><div class="otd-kval green" id="h-otd">—</div><div class="otd-klbl">On Time Delivery</div><div class="otd-target" id="target-otd">Target: —</div><div class="trend-badge" id="trend-otd" style="display:none"></div></div>
-        <div class="otd-kpi" style="border-top-color:#1882C7"><div class="otd-kval" style="color:#1882C7" id="h-quality">—</div><div class="otd-klbl">Quality</div><div class="otd-target" id="target-quality">Target: —</div><div class="trend-badge" id="trend-quality" style="display:none"></div></div>
-        <div class="otd-kpi gold"><div class="otd-kval" style="color:#b08d3c" id="h-tat">—</div><div class="otd-klbl">Turn Around Time</div><div class="otd-target" id="target-tat">Target: —</div><div class="trend-badge" id="trend-tat" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-ad" id="ad-revenue"></div><div class="otd-target" id="target-revenue">Target: —</div><div class="trend-badge" id="trend-revenue" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-bookings">—</div><div class="otd-klbl">Bookings</div><div class="otd-ad" id="ad-bookings"></div><div class="otd-target" id="target-bookings">Target: —</div><div class="trend-badge" id="trend-bookings" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-otd">—</div><div class="otd-klbl">On Time Delivery</div><div class="otd-ad" id="ad-otd"></div><div class="otd-target" id="target-otd">Target: —</div><div class="trend-badge" id="trend-otd" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-quality">—</div><div class="otd-klbl">Quality</div><div class="otd-ad" id="ad-quality"></div><div class="otd-target" id="target-quality">Target: —</div><div class="trend-badge" id="trend-quality" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-remake">—</div><div class="otd-klbl">Remake Rate</div><div class="otd-ad" id="ad-remake"></div><div class="otd-target" id="target-remake">Target: —</div><div class="trend-badge" id="trend-remake" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="h-tat">—</div><div class="otd-klbl">Turn Around Time</div><div class="otd-ad" id="ad-tat"></div><div class="otd-target" id="target-tat">Target: —</div><div class="trend-badge" id="trend-tat" style="display:none"></div></div>
 
         <!-- Heat map popover (absolutely positioned inside the grid; doesn't take a grid cell) -->
         <div class="bu-heatmap" id="bu-heatmap" aria-hidden="true">
@@ -3717,6 +3730,45 @@ function getRangeBounds(date, range) {
   return { start: toISO(start), end: toISO(end) };
 }
 
+/* ──────── Working-day calendar + Day Prior rule (ClearPath OS standard) ────────
+   Mirrors coo-dashboard/index.html. Client-side fallback until public."Dates"
+   is populated. "Day Prior" = most recent business day before today, UNLESS the
+   lab actually invoiced revenue on a weekend/holiday, in which case that day is
+   treated as the day prior. Ratio MTDs (OTD/TAT/Quality/Remake) cap at `yest`
+   to avoid same-day denominator drift; Revenue/Bookings MTDs cap at today. */
+const HOLIDAYS_CATALOG_2026 = [
+  '2026-01-01', '2026-05-25', '2026-07-03', '2026-09-07',
+  '2026-11-26', '2026-11-27', '2026-12-25'
+];
+function isWorkingDay(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const dow = d.getDay();                 // 0=Sun..6=Sat
+  if (dow === 0 || dow === 6) return false;
+  if (HOLIDAYS_CATALOG_2026.indexOf(iso) !== -1) return false;
+  return true;
+}
+function lastBusinessDayBefore(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  do { d.setDate(d.getDate() - 1); } while (!isWorkingDay(toISO(d)));
+  return toISO(d);
+}
+// `revByDate` is optional: { 'YYYY-MM-DD': revenueNumber }. When present, a
+// weekend/holiday with real revenue overrides the plain last-business-day.
+function computeYest(todayIso, revByDate) {
+  const yestBiz = lastBusinessDayBefore(todayIso);
+  if (revByDate) {
+    const lastRev = Object.keys(revByDate)
+      .filter(k => k < todayIso && (+revByDate[k]) > 0)
+      .sort().pop();
+    if (lastRev && lastRev > yestBiz) return lastRev;
+  }
+  return yestBiz;
+}
+function localToday() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+}
+
 function updateRangeLabel() {
   const lblEl = document.getElementById('otd-lbl');
   if (!lblEl) return;
@@ -4395,25 +4447,36 @@ async function saveTarget(op, inputEl) {
    by date + business unit. EDIT THE MAPPING BELOW to match your
    organization's data taxonomy.
 ════════════════════════════════════════════ */
+// Each tab maps to one or more canonical product BU L1 values (the standard's
+// axis). `showAD` tabs additionally surface the analog/digital breakdown, which
+// is NOT part of the source-of-truth standard and is served by the module's
+// own v_aox_* views (see sql/2026-06-05_aox_standard_views.sql).
 const BU_DATA_FILTER = {
-  'full-arch':       { bu: ['Full Arch'],                       ad: null      },
-  'crown-bridge':    { bu: ['Restorative', 'High Esthetics'],   ad: null      },
-  'digital-product': { bu: ['Full Arch'],                       ad: 'Digital' },
-  'analog-dentures': { bu: ['Removable'],                       ad: 'Analog'  }
+  'full-arch':       { l1: ['Full Arch'],                      showAD: false },
+  'crown-bridge':    { l1: ['Restorative', 'High Esthetics'],  showAD: false },
+  'digital-product': { l1: ['Full Arch'],                      showAD: true  },
+  'analog-dentures': { l1: ['Removable'],                      showAD: true  }
 };
-
-function buFilterStr(includeAnalogDigital) {
-  const f = BU_DATA_FILTER[currentBU] || { bu: null, ad: null };
-  let s = '';
-  if (f.bu && f.bu.length) {
-    // PostgREST "in.()" expects unquoted values for simple strings; values with spaces need quoting.
-    const list = f.bu.map(v => '"' + v.replace(/"/g, '\\"') + '"').join(',');
-    s += '&Business%20Unit=in.(' + encodeURIComponent(list) + ')';
-  }
-  if (includeAnalogDigital && f.ad) {
-    s += '&Analog%20Digital=eq.' + encodeURIComponent(f.ad);
-  }
-  return s;
+// PostgREST in.() list of business_unit_l1 values (quoted for spaces)
+function l1InFilter(l1list) {
+  const list = (l1list || []).map(v => '"' + v.replace(/"/g, '\\"') + '"').join(',');
+  return '&business_unit_l1=in.(' + encodeURIComponent(list) + ')';
+}
+function blankAcc() {
+  return { shipped:0, onTime:0, totalRemake:0, labFault:0, tatSum:0, tatW:0, revenue:0, bookings:0 };
+}
+// Turn an accumulator into the six display metrics (ClearPath OS standard math).
+function metricsFromAcc(a) {
+  return {
+    revenue:    a.revenue,
+    bookings:   a.bookings,
+    otdPct:     a.shipped > 0 ? Math.round(a.onTime / a.shipped * 100) : null,
+    // Good %: share of remakes NOT lab's fault. Undefined (—) on zero remakes.
+    qualityPct: a.totalRemake > 0 ? Math.round((1 - a.labFault / a.totalRemake) * 100) : null,
+    remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
+    tatAvg:     a.tatW > 0 ? a.tatSum / a.tatW : null,
+    total:      a.shipped
+  };
 }
 
 function updateHealthBanner() {
@@ -4424,50 +4487,97 @@ function updateHealthBanner() {
   if (heroTitle) heroTitle.textContent = label.toUpperCase() + ' OPERATIONS';
 }
 
-// Aggregate BU health metrics over a date range using the daily views
-async function fetchBUMetrics(start, end) {
-  const filter = BU_DATA_FILTER[currentBU] || { bu: null, ad: null };
-  let buF = '', adF = '';
-  if (filter.bu && filter.bu.length) {
-    const list = filter.bu.map(v => '"' + v + '"').join(',');
-    buF = '&business_unit=in.(' + encodeURIComponent(list) + ')';
-  }
-  if (filter.ad) {
-    adF = '&analog_digital=eq.' + encodeURIComponent(filter.ad);
-  }
-  const [healthRows, revenueRows] = await Promise.all([
-    sbFetch(`bu_health_daily?ship_day=gte.${start}&ship_day=lte.${end}${buF}${adF}&limit=10000`),
-    sbFetch(`bu_revenue_daily?invoice_day=gte.${start}&invoice_day=lte.${end}${buF}&limit=10000`)
+// Aggregate BU health metrics over a date range using the standard daily views.
+// Formulas are the ClearPath OS ecosystem standard (see SKDLA metrics doc):
+//   OTD     = on_time_case_count / shipped_case_count
+//   Quality = 1 − lab_fault_remake_count / remake_case_count   ("Good %"); null
+//             when there are zero remakes (never shows 100% on a zero-remake day)
+//   Remake  = remake_case_count / shipped_case_count
+//   TAT     = shipped-weighted avg avg_tat_business_days (BUSINESS days)
+// MTD cap: ratio metrics end at `yest` (last business day) to avoid same-day
+// denominator drift; Revenue/Bookings end at today for a live forecast.
+// L1 totals from the EXISTING canonical views (the standard). Ratio metrics end
+// at endRatio (last business day); Revenue/Bookings end at endRevenue (today).
+async function loadCanonicalAcc(start, endRatio, endRevenue, l1list) {
+  const l1In = l1InFilter(l1list);
+  const [otd, tat, rl2, rev, book] = await Promise.all([
+    sbFetch(`v_otd_daily_by_bu?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}&limit=10000`),
+    sbFetch(`v_tat_daily_by_bu?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}&limit=10000`),
+    sbFetch(`remake_rate_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}&limit=10000`),
+    sbFetch(`v_daily_revenue_by_bu?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}&limit=10000`),
+    sbFetch(`v_daily_bookings_by_bu?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}&limit=10000`)
   ]);
-  let totalCases = 0, onTimeCases = 0, remakeCases = 0;
-  let tatWeightedSum = 0, tatWeight = 0;
-  (healthRows || []).forEach(r => {
-    totalCases   += r.total_cases   || 0;
-    onTimeCases  += r.on_time_cases || 0;
-    remakeCases  += r.remake_cases  || 0;
-    if (r.avg_tat != null && r.total_cases > 0) {
-      tatWeightedSum += parseFloat(r.avg_tat) * r.total_cases;
-      tatWeight      += r.total_cases;
-    }
+  const a = blankAcc();
+  (otd || []).forEach(r => { a.shipped += +(r.shipped_case_count||0); a.onTime += +(r.on_time_case_count||0); });
+  (tat || []).forEach(r => {
+    const sc = +(r.shipped_case_count||0);
+    if (r.avg_tat_business_days != null && sc > 0) { a.tatSum += parseFloat(r.avg_tat_business_days)*sc; a.tatW += sc; }
   });
-  const revenue = (revenueRows || []).reduce((s, r) => s + (parseFloat(r.revenue) || 0), 0);
-  return {
-    revenue,
-    otdPct:     totalCases > 0 ? Math.round(onTimeCases / totalCases * 100) : null,
-    qualityPct: totalCases > 0 ? Math.round((1 - remakeCases / totalCases) * 100) : null,
-    tatAvg:     tatWeight    > 0 ? tatWeightedSum / tatWeight : null,
-    total:      totalCases
-  };
+  // Quality denominator = TOTAL remakes; numerator = lab-fault. From the L2 view.
+  (rl2 || []).forEach(r => { a.totalRemake += +(r.remake_case_count||0); a.labFault += +(r.lab_fault_remake_count||0); });
+  (rev  || []).forEach(r => { a.revenue  += parseFloat(r.revenue)  || 0; });
+  (book || []).forEach(r => { a.bookings += parseFloat(r.bookings) || 0; });
+  return a;
 }
 
+// One analog/digital slice from the module's v_aox_* views (NON-standard axis).
+async function loadADAcc(start, endRatio, endRevenue, l1list, ad) {
+  const l1In = l1InFilter(l1list);
+  const adF  = '&analog_digital=eq.' + encodeURIComponent(ad);
+  const [health, rev, book] = await Promise.all([
+    sbFetch(`v_aox_bu_health_ad?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}${adF}&limit=10000`),
+    sbFetch(`v_aox_bu_revenue_ad?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}${adF}&limit=10000`),
+    sbFetch(`v_aox_bu_bookings_ad?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}${adF}&limit=10000`)
+  ]);
+  const a = blankAcc();
+  (health || []).forEach(r => {
+    const sc = +(r.shipped_case_count||0);
+    a.shipped += sc; a.onTime += +(r.on_time_case_count||0);
+    a.totalRemake += +(r.remake_case_count||0); a.labFault += +(r.lab_fault_remake_count||0);
+    if (r.avg_tat_business_days != null && sc > 0) { a.tatSum += parseFloat(r.avg_tat_business_days)*sc; a.tatW += sc; }
+  });
+  (rev  || []).forEach(r => { a.revenue  += parseFloat(r.revenue)  || 0; });
+  (book || []).forEach(r => { a.bookings += parseFloat(r.bookings) || 0; });
+  return a;
+}
+
+// Returns the L1 standard metrics plus, on showAD tabs, an `.ad` breakdown
+// { analog: {...}, digital: {...} } for the smaller secondary numbers.
+async function fetchBUMetrics(start, end) {
+  const filter = BU_DATA_FILTER[currentBU] || { l1: null, showAD: false };
+  const today = localToday();
+  const yest  = computeYest(today, null);
+  const endRatio   = end < yest  ? end : yest;   // OTD / TAT / Quality / Remake
+  const endRevenue = end < today ? end : today;  // Revenue / Bookings
+
+  const l1Acc = await loadCanonicalAcc(start, endRatio, endRevenue, filter.l1);
+  const out = metricsFromAcc(l1Acc);
+
+  if (filter.showAD) {
+    // The v_aox_* views are a pending migration (Scott sign-off). If they're not
+    // live yet, still show the L1 standard numbers and just omit the A/D detail.
+    try {
+      const [analog, digital] = await Promise.all([
+        loadADAcc(start, endRatio, endRevenue, filter.l1, 'Analog'),
+        loadADAcc(start, endRatio, endRevenue, filter.l1, 'Digital')
+      ]);
+      out.ad = { analog: metricsFromAcc(analog), digital: metricsFromAcc(digital) };
+    } catch (e) {
+      console.warn('Analog/Digital breakdown unavailable (needs v_aox_* migration):', e.message);
+    }
+  }
+  return out;
+}
+
+const BU_TILE_IDS = ['revenue','bookings','otd','quality','remake','tat'];
 async function loadBUHealth() {
   updateHealthBanner();
-  ['h-revenue','h-otd','h-quality','h-tat'].forEach(id => {
-    const el = document.getElementById(id);
+  BU_TILE_IDS.forEach(k => {
+    const el = document.getElementById('h-' + k);
     if (el) el.textContent = '…';
   });
-  ['trend-revenue','trend-otd','trend-quality','trend-tat'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  BU_TILE_IDS.forEach(k => {
+    const el = document.getElementById('trend-' + k); if (el) el.style.display = 'none';
   });
   if (!otdDate) return;
 
@@ -4483,8 +4593,8 @@ async function loadBUHealth() {
     renderHealthTiles(current);
   } catch (e) {
     console.error('BU Health load failed:', e);
-    ['h-revenue','h-otd','h-quality','h-tat'].forEach(id => {
-      const el = document.getElementById(id);
+    BU_TILE_IDS.forEach(k => {
+      const el = document.getElementById('h-' + k);
       if (el) el.textContent = '—';
     });
   }
@@ -4534,6 +4644,10 @@ function formatTargetValue(metric, value) {
   }
 }
 
+// ClearPath OS brand thresholds — Killian Blue = good, brand red = bad.
+// No green / amber (palette rule). Standard cut points per the metrics doc.
+const KPI_GOOD = '#1882C7';   // Killian Blue
+const KPI_BAD  = '#E0625A';   // brand red
 function renderHealthTiles(m) {
   const g = id => document.getElementById(id);
   // Revenue
@@ -4542,21 +4656,31 @@ function renderHealthTiles(m) {
       ? '$' + Math.round(m.revenue).toLocaleString()
       : '—';
   }
-  // On Time Delivery
+  // Bookings (received-date money) — same shape as Revenue
+  if (g('h-bookings')) {
+    g('h-bookings').textContent = m.bookings > 0
+      ? '$' + Math.round(m.bookings).toLocaleString()
+      : '—';
+  }
+  // On Time Delivery — standard target 92%
   if (g('h-otd')) {
     g('h-otd').textContent = m.otdPct != null ? m.otdPct + '%' : '—';
-    g('h-otd').style.color = m.otdPct == null ? '' :
-      (m.otdPct >= 95 ? '#16a34a' : m.otdPct >= 80 ? '#d97706' : '#dc2626');
+    g('h-otd').style.color = m.otdPct == null ? '' : (m.otdPct >= 92 ? KPI_GOOD : KPI_BAD);
   }
-  // Quality
+  // Quality (Good %) — standard target 95%; — on zero-remake days
   if (g('h-quality')) {
     g('h-quality').textContent = m.qualityPct != null ? m.qualityPct + '%' : '—';
-    g('h-quality').style.color = m.qualityPct == null ? '#1882C7' :
-      (m.qualityPct >= 98 ? '#16a34a' : m.qualityPct >= 95 ? '#d97706' : '#dc2626');
+    g('h-quality').style.color = m.qualityPct == null ? KPI_GOOD : (m.qualityPct >= 95 ? KPI_GOOD : KPI_BAD);
   }
-  // Turn Around Time
+  // Remake rate — standard ≤ 5% good (lower is better)
+  if (g('h-remake')) {
+    g('h-remake').textContent = m.remakePct != null ? m.remakePct + '%' : '—';
+    g('h-remake').style.color = m.remakePct == null ? '' : (m.remakePct <= 5 ? KPI_GOOD : KPI_BAD);
+  }
+  // Turn Around Time — standard ≤ 5 business days good
   if (g('h-tat')) {
     g('h-tat').textContent = m.tatAvg != null ? m.tatAvg.toFixed(1) + ' days' : '—';
+    g('h-tat').style.color = m.tatAvg == null ? '' : (m.tatAvg <= 5 ? KPI_GOOD : KPI_BAD);
   }
 
   // ── Targets + trend badges (vs target, not vs prior period) ──
@@ -4576,22 +4700,53 @@ function renderHealthTiles(m) {
     }
   };
 
-  const tRev = tgtFor('revenue');
-  const tOtd = tgtFor('otd');
-  const tQua = tgtFor('quality');
-  const tTat = tgtFor('tat');
+  const tRev  = tgtFor('revenue');
+  const tBook = tgtFor('bookings');
+  const tOtd  = tgtFor('otd');
+  const tQua  = tgtFor('quality');
+  const tRmk  = tgtFor('remake');
+  const tTat  = tgtFor('tat');
 
-  setTargetLine('target-revenue', tRev, 'revenue');
-  setTargetLine('target-otd',     tOtd, 'otd');
-  setTargetLine('target-quality', tQua, 'quality');
-  setTargetLine('target-tat',     tTat, 'tat');
+  setTargetLine('target-revenue',  tRev,  'revenue');
+  setTargetLine('target-bookings', tBook, 'revenue');  // money format
+  setTargetLine('target-otd',      tOtd,  'otd');
+  setTargetLine('target-quality',  tQua,  'quality');
+  setTargetLine('target-remake',   tRmk,  'otd');       // % format
+  setTargetLine('target-tat',      tTat,  'tat');
 
-  updateTrendBadge('revenue', m.revenue > 0 ? m.revenue : null, tRev, true);
-  updateTrendBadge('otd',     m.otdPct,     tOtd, true);
-  updateTrendBadge('quality', m.qualityPct, tQua, true);
-  updateTrendBadge('tat',     m.tatAvg,     tTat, false); // lower TAT is better
+  updateTrendBadge('revenue',  m.revenue > 0 ? m.revenue : null, tRev,  true);
+  updateTrendBadge('bookings', m.bookings > 0 ? m.bookings : null, tBook, true);
+  updateTrendBadge('otd',      m.otdPct,     tOtd, true);
+  updateTrendBadge('quality',  m.qualityPct, tQua, true);
+  updateTrendBadge('remake',   m.remakePct,  tRmk, false); // lower remake is better
+  updateTrendBadge('tat',      m.tatAvg,     tTat, false); // lower TAT is better
+
+  // ── Analog/Digital supplementary split (showAD tabs only) ──
+  const note = g('bu-ad-note');
+  const showAD = !!m.ad;
+  if (note) note.style.display = showAD ? '' : 'none';
+  const adRow = (metric, key) => {
+    const el = g('ad-' + metric); if (!el) return;
+    if (!showAD) { el.innerHTML = ''; return; }
+    const a = fmtMetricSmall(metric, m.ad.analog[key]);
+    const d = fmtMetricSmall(metric, m.ad.digital[key]);
+    el.innerHTML = `<span class="ad-k">A</span> ${a}<span class="ad-sep">·</span><span class="ad-k">D</span> ${d}`;
+  };
+  adRow('revenue','revenue'); adRow('bookings','bookings'); adRow('otd','otdPct');
+  adRow('quality','qualityPct'); adRow('remake','remakePct'); adRow('tat','tatAvg');
 
   attachHeatHandlers();
+}
+
+// Compact formatter for the small Analog/Digital figures under each tile.
+function fmtMetricSmall(metric, v) {
+  if (v == null) return '—';
+  switch (metric) {
+    case 'revenue':
+    case 'bookings': return v >= 1000 ? '$' + Math.round(v/1000) + 'k' : '$' + Math.round(v);
+    case 'tat':      return v.toFixed(1) + 'd';
+    default:         return v + '%';   // otd / quality / remake
+  }
 }
 
 /* ════════════════════════════════════════════
@@ -4615,29 +4770,49 @@ const METRIC_DEFS = {
       return interp('#dbeafe', '#1882C7', t);
     }
   },
+  bookings: {
+    label: 'Bookings',
+    sub: 'Daily booked ($, received date) — click any day to jump to it',
+    valueFn: r => r.bookings,
+    fmtFull: v => v == null ? '—' : '$' + Math.round(v).toLocaleString(),
+    fmtCell: v => v == null ? '—' : (v >= 1000 ? Math.round(v/1000) + 'k' : '$' + Math.round(v)),
+    colorFor: (v, maxVal) => {
+      if (v == null || v === 0) return '#f3f4f6';
+      const t = Math.min(1, v / maxVal);
+      return interp('#dbeafe', '#1882C7', t);
+    }
+  },
   otd: {
     label: 'On Time Delivery',
     sub: 'Daily OTD % — click any day to jump to it',
-    valueFn: r => r.total_cases > 0 ? Math.round(r.on_time_cases / r.total_cases * 100) : null,
+    valueFn: r => r.shipped_case_count > 0 ? Math.round(r.on_time_case_count / r.shipped_case_count * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
-    colorFor: v => v == null ? '#f3f4f6' : v >= 95 ? '#16a34a' : v >= 80 ? '#facc15' : '#dc2626'
+    colorFor: v => v == null ? '#f3f4f6' : v >= 92 ? '#1882C7' : '#E0625A'
   },
   quality: {
     label: 'Quality',
-    sub: 'Daily quality % (100 − remake rate) — click any day to jump to it',
-    valueFn: r => r.total_cases > 0 ? Math.round((1 - r.remake_cases / r.total_cases) * 100) : null,
+    sub: 'Daily Good % (1 − lab-fault ÷ total remakes) — click any day to jump to it',
+    valueFn: r => r.remake_case_count > 0 ? Math.round((1 - r.lab_fault_remake_count / r.remake_case_count) * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
-    colorFor: v => v == null ? '#f3f4f6' : v >= 98 ? '#16a34a' : v >= 95 ? '#facc15' : '#dc2626'
+    colorFor: v => v == null ? '#f3f4f6' : v >= 95 ? '#1882C7' : '#E0625A'
+  },
+  remake: {
+    label: 'Remake Rate',
+    sub: 'Daily remake % (remakes ÷ shipped) — click any day to jump to it',
+    valueFn: r => r.shipped_case_count > 0 ? Math.round(r.remake_case_count / r.shipped_case_count * 1000) / 10 : null,
+    fmtFull: v => v == null ? '—' : v + '%',
+    fmtCell: v => v == null ? '—' : v + '%',
+    colorFor: v => v == null ? '#f3f4f6' : v <= 5 ? '#1882C7' : '#E0625A'
   },
   tat: {
     label: 'Turn Around Time',
-    sub: 'Daily avg TAT (days) — click any day to jump to it',
-    valueFn: r => r.avg_tat,
+    sub: 'Daily avg TAT (business days) — click any day to jump to it',
+    valueFn: r => r.avg_tat_business_days,
     fmtFull: v => v == null ? '—' : v.toFixed(1) + ' days',
     fmtCell: v => v == null ? '—' : v.toFixed(1),
-    colorFor: v => v == null ? '#f3f4f6' : v <= 10 ? '#16a34a' : v <= 15 ? '#facc15' : '#dc2626'
+    colorFor: v => v == null ? '#f3f4f6' : v <= 5 ? '#1882C7' : '#E0625A'
   }
 };
 
@@ -4668,45 +4843,57 @@ async function loadHeatData() {
   startDate.setDate(endDate.getDate() - HEAT_DAYS + 1);
   const startStr = startDate.toISOString().slice(0,10);
 
-  const filter = BU_DATA_FILTER[currentBU] || { bu: null, ad: null };
-  let buF = '', adF = '';
-  if (filter.bu && filter.bu.length) {
-    const list = filter.bu.map(v => '"' + v + '"').join(',');
-    buF = '&business_unit=in.(' + encodeURIComponent(list) + ')';
-  }
-  if (filter.ad) {
-    adF = '&analog_digital=eq.' + encodeURIComponent(filter.ad);
-  }
+  // Heat map always shows the L1 standard metric (matches the big tile number),
+  // from the EXISTING canonical views. Split tabs show their L1 total here too.
+  const filter = BU_DATA_FILTER[currentBU] || { l1: null, showAD: false };
+  const l1In = l1InFilter(filter.l1);
 
   try {
-    const [health, revenue] = await Promise.all([
-      sbFetch(`bu_health_daily?ship_day=gte.${startStr}${buF}${adF}&limit=10000`),
-      sbFetch(`bu_revenue_daily?invoice_day=gte.${startStr}${buF}&limit=10000`)
+    const [otd, tat, rl2, revenue, bookings] = await Promise.all([
+      sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
+      sbFetch(`v_tat_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
+      sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${l1In}&limit=10000`),
+      sbFetch(`v_daily_revenue_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`),
+      sbFetch(`v_daily_bookings_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`)
     ]);
 
-    // Build per-day buckets for the full HEAT_DAYS window
+    // Build per-day buckets for the full HEAT_DAYS window. Field names mirror the
+    // standard view columns so METRIC_DEFS.valueFn reads them directly.
     const byDay = {};
     for (let i = 0; i < HEAT_DAYS; i++) {
       const d = new Date(endDate); d.setDate(endDate.getDate() - HEAT_DAYS + 1 + i);
       const key = d.toISOString().slice(0,10);
-      byDay[key] = { day: key, total_cases: 0, on_time_cases: 0, remake_cases: 0, tat_sum: 0, tat_n: 0, revenue: 0 };
+      byDay[key] = { day: key, shipped_case_count: 0, on_time_case_count: 0,
+                     remake_case_count: 0, lab_fault_remake_count: 0,
+                     tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
     }
-    (health || []).forEach(r => {
-      const d = byDay[r.ship_day]; if (!d) return;
-      d.total_cases   += r.total_cases   || 0;
-      d.on_time_cases += r.on_time_cases || 0;
-      d.remake_cases  += r.remake_cases  || 0;
-      // Weight avg_tat by total_cases for proper aggregation across analog/digital splits
-      if (r.avg_tat != null && r.total_cases > 0) {
-        d.tat_sum += parseFloat(r.avg_tat) * r.total_cases;
-        d.tat_n   += r.total_cases;
+    (otd || []).forEach(r => {
+      const d = byDay[r.report_date]; if (!d) return;
+      d.shipped_case_count += +(r.shipped_case_count || 0);
+      d.on_time_case_count += +(r.on_time_case_count || 0);
+    });
+    (tat || []).forEach(r => {
+      const d = byDay[r.report_date]; if (!d) return;
+      const sc = +(r.shipped_case_count || 0);
+      if (r.avg_tat_business_days != null && sc > 0) {
+        d.tat_sum += parseFloat(r.avg_tat_business_days) * sc;
+        d.tat_n   += sc;
       }
     });
+    (rl2 || []).forEach(r => {
+      const d = byDay[r.report_date]; if (!d) return;
+      d.remake_case_count      += +(r.remake_case_count || 0);
+      d.lab_fault_remake_count += +(r.lab_fault_remake_count || 0);
+    });
     (revenue || []).forEach(r => {
-      const d = byDay[r.invoice_day]; if (!d) return;
+      const d = byDay[r.report_date]; if (!d) return;
       d.revenue += parseFloat(r.revenue) || 0;
     });
-    Object.values(byDay).forEach(d => { d.avg_tat = d.tat_n > 0 ? d.tat_sum / d.tat_n : null; });
+    (bookings || []).forEach(r => {
+      const d = byDay[r.report_date]; if (!d) return;
+      d.bookings += parseFloat(r.bookings) || 0;
+    });
+    Object.values(byDay).forEach(d => { d.avg_tat_business_days = d.tat_n > 0 ? d.tat_sum / d.tat_n : null; });
     const arr = Object.values(byDay).sort((a,b) => a.day.localeCompare(b.day));
     _heatCache = { bu: currentBU, data: arr, loadedAt: Date.now() };
     return arr;
@@ -4793,16 +4980,21 @@ function renderHeatMap(grid, data, metric) {
   });
   grid.innerHTML = cells.join('');
 
-  // Legend
+  // Legend — ClearPath OS brand only (Killian Blue good / brand red bad).
   const legend = document.getElementById('bu-heatmap-legend');
-  if (metric === 'revenue') {
-    legend.innerHTML = `Low <span class="bu-hm-legend-swatch" style="background:#dbeafe"></span><span class="bu-hm-legend-swatch" style="background:${interp('#dbeafe','#1882C7',0.5)}"></span><span class="bu-hm-legend-swatch" style="background:#1882C7"></span> High &nbsp; · &nbsp; <span class="bu-hm-legend-swatch" style="background:#f3f4f6"></span> No data`;
+  const sw = c => `<span class="bu-hm-legend-swatch" style="background:${c}"></span>`;
+  const nd = ` &nbsp; · &nbsp; ${sw('#f3f4f6')} No data`;
+  const GOOD = '#1882C7', BAD = '#E0625A';
+  if (metric === 'revenue' || metric === 'bookings') {
+    legend.innerHTML = `Low ${sw('#dbeafe')}${sw(interp('#dbeafe','#1882C7',0.5))}${sw('#1882C7')} High` + nd;
   } else if (metric === 'tat') {
-    legend.innerHTML = `<span class="bu-hm-legend-swatch" style="background:#16a34a"></span> ≤10 days &nbsp; <span class="bu-hm-legend-swatch" style="background:#facc15"></span> 11–15 &nbsp; <span class="bu-hm-legend-swatch" style="background:#dc2626"></span> &gt;15 &nbsp; <span class="bu-hm-legend-swatch" style="background:#f3f4f6"></span> No data`;
+    legend.innerHTML = `${sw(GOOD)} ≤5 days &nbsp; ${sw(BAD)} &gt;5` + nd;
   } else if (metric === 'quality') {
-    legend.innerHTML = `<span class="bu-hm-legend-swatch" style="background:#16a34a"></span> ≥98% &nbsp; <span class="bu-hm-legend-swatch" style="background:#facc15"></span> 95–97 &nbsp; <span class="bu-hm-legend-swatch" style="background:#dc2626"></span> &lt;95 &nbsp; <span class="bu-hm-legend-swatch" style="background:#f3f4f6"></span> No data`;
-  } else {
-    legend.innerHTML = `<span class="bu-hm-legend-swatch" style="background:#16a34a"></span> ≥95% &nbsp; <span class="bu-hm-legend-swatch" style="background:#facc15"></span> 80–94 &nbsp; <span class="bu-hm-legend-swatch" style="background:#dc2626"></span> &lt;80 &nbsp; <span class="bu-hm-legend-swatch" style="background:#f3f4f6"></span> No data`;
+    legend.innerHTML = `${sw(GOOD)} ≥95% &nbsp; ${sw(BAD)} &lt;95` + nd;
+  } else if (metric === 'remake') {
+    legend.innerHTML = `${sw(GOOD)} ≤5% &nbsp; ${sw(BAD)} &gt;5` + nd;
+  } else { // otd
+    legend.innerHTML = `${sw(GOOD)} ≥92% &nbsp; ${sw(BAD)} &lt;92` + nd;
   }
 }
 
@@ -4827,10 +5019,12 @@ function cancelHide()   { if (_heatHideTimer) { clearTimeout(_heatHideTimer); _h
 
 function attachHeatHandlers() {
   const map = [
-    { id: 'h-revenue', metric: 'revenue' },
-    { id: 'h-otd',     metric: 'otd'     },
-    { id: 'h-quality', metric: 'quality' },
-    { id: 'h-tat',     metric: 'tat'     }
+    { id: 'h-revenue',  metric: 'revenue'  },
+    { id: 'h-bookings', metric: 'bookings' },
+    { id: 'h-otd',      metric: 'otd'      },
+    { id: 'h-quality',  metric: 'quality'  },
+    { id: 'h-remake',   metric: 'remake'   },
+    { id: 'h-tat',      metric: 'tat'      }
   ];
   map.forEach(({ id, metric }) => {
     const tile = document.getElementById(id)?.closest('.otd-kpi');

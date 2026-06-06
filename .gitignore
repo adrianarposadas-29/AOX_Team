@@ -1,0 +1,5 @@
+# Local-only PRD / working docs — not committed to the repo
+prd/
+
+# Local preview config
+.claude/
