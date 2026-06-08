@@ -1062,7 +1062,7 @@ textarea.form-input{min-height:80px;resize:vertical}
 
 <!-- NAV TABS -->
 <nav class="nav-tabs">
-  <div class="nav-tab active" data-tab="otd"     onclick="setTab(&#39;otd&#39;,this)">Business Unit Health <span class="count" id="otd-badge">—</span></div>
+  <div class="nav-tab active" data-tab="otd"     onclick="setTab(&#39;otd&#39;,this)">Business Unit Health</div>
   <div class="nav-tab" data-tab="improvement" onclick="setTab(&#39;improvement&#39;,this)">Business Unit Improvement Actions</div>
   <div class="nav-tab" data-tab="owners"  onclick="setTab(&#39;owners&#39;,this)">Metric Owners</div>
   <div class="nav-tab" data-tab="targets" onclick="setTab(&#39;targets&#39;,this)">Targets</div>
@@ -4079,8 +4079,6 @@ function updateOTDKPIs() {
   if(g('otd-k-otd')) g('otd-k-otd').textContent = avg!==null ? avg+'%' : '—';
   if(g('otd-k-on'))  g('otd-k-on').textContent  = pcts.length ? onTime : '—';
   if(g('otd-k-late'))g('otd-k-late').textContent = totalLate;
-  const bdg = document.getElementById('otd-badge');
-  if (bdg) bdg.textContent = pcts.length || '—';
 }
 
 function otdExport() {
