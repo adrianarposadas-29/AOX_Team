@@ -68,8 +68,8 @@ This is an **L1 rollup**, not a BU-specific figure:
   Nightguard).
 - **Printed Product and Analog Dentures show identical OTD/Bookings** (both roll up to
   `Removable`) — by construction, not a bug.
-- Each tile is labeled "*&lt;parent&gt; L1 rollup*", the heat-map popover title
-  appends "(&lt;parent&gt; L1 rollup)", and an on-tile note explains it.
+- The OTD tile is labeled "*&lt;parent&gt; L1 rollup*" and the heat-map popover title
+  appends "(&lt;parent&gt; L1 rollup)" so the rollup is visible at the tile level.
 - **Quality and Revenue remain true L2** (so two BUs can share an OTD/Bookings rollup
   yet differ on Quality).
 

@@ -486,11 +486,6 @@ textarea.form-input{min-height:80px;resize:vertical}
 .otd-ad { font-size:11px; font-weight:600; color:var(--muted); margin-top:5px; line-height:1.35; }
 .otd-ad .ad-k { color:var(--killian-blue); }
 .otd-ad .ad-sep { color:var(--border); margin:0 5px; }
-.bu-ad-note {
-  font-size:11px; color:var(--muted); background:var(--off-white);
-  border:1px solid var(--border); border-left:3px solid var(--lab-gold);
-  border-radius:6px; padding:8px 11px; margin-bottom:12px; line-height:1.4;
-}
 .bu-heatmap {
   position:absolute; top:100%; left:50%; margin-top:8px;
   width:380px; max-width:calc(100vw - 32px);
@@ -2476,7 +2471,6 @@ textarea.form-input{min-height:80px;resize:vertical}
       <span class="collapse-chevron">▼</span>
     </div>
     <div class="collapse-body" style="padding:14px">
-      <div class="bu-ad-note" id="bu-ad-note" style="display:none">Note: this is an <strong>L2 business unit</strong>. The current data warehouse only exposes <strong>Revenue, Quality, and Remake</strong> at this level (via <code>daily_revenue_l2</code> / <code>remake_rate_daily_l2</code>). <strong>OTD, TAT, and Bookings</strong> exist only at the L1 level, so they show <strong>n/a</strong> here until an L2 view is added.</div>
       <div class="otd-grid">
         <div class="otd-kpi"><div class="otd-kval" id="h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-ad" id="ad-revenue"></div><div class="otd-target" id="target-revenue">Target: —</div><div class="trend-badge" id="trend-revenue" style="display:none"></div></div>
         <div class="otd-kpi"><div class="otd-kval" id="h-otd">—</div><div class="otd-klbl">On Time Delivery</div><div class="otd-ad" id="ad-otd"></div><div class="otd-target" id="target-otd">Target: —</div><div class="trend-badge" id="trend-otd" style="display:none"></div></div>
@@ -4801,20 +4795,6 @@ function renderHealthTiles(m) {
       if (adEl) adEl.innerHTML = '<span class="ad-k">' + m.rollupL1 + '</span> L1 rollup';
     });
   }
-  const note = g('bu-ad-note');
-  if (note) {
-    note.style.display = m.l2limited ? '' : 'none';
-    if (m.l2limited) {
-      note.innerHTML = 'Note: this is an <strong>L2 business unit</strong>. '
-        + '<strong>Revenue, Quality, and Remake</strong> are reported at true L2 '
-        + '(via <code>daily_revenue_l2</code> / <code>remake_rate_daily_l2</code>). '
-        + '<strong>OTD</strong> and <strong>Bookings</strong> have no L2 source in the data '
-        + 'warehouse, so they show the parent <strong>' + (m.rollupL1 || 'L1') + '</strong> rollup '
-        + '(<code>v_otd_daily_by_bu</code> / <code>v_daily_bookings_by_bu</code>) — which also '
-        + 'includes sibling L2s. <strong>TAT</strong> shows <strong>n/a</strong> until an L2 view is added.';
-    }
-  }
-
   attachHeatHandlers();
 }
 
