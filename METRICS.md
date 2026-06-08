@@ -33,19 +33,23 @@ Live taxonomy (verified): L1 = {`Full Arch`, `High Esthetics`, `Other`,
 
 ## Metric → view → formula
 
+The scorecard **displays four cards** for every BU: **Revenue, OTD, Quality, TAT**.
+**Bookings** and **Remake Rate** were removed from the display (2026-06-08); their
+view/formula rows are kept below for reference and could be re-added.
+
 | Tile | View(s) | Formula | L1 tab | L2 tabs |
 |---|---|---|---|---|
 | **Revenue** | `v_daily_revenue_by_bu` (L1) · `daily_revenue_l2` (L2) | `Σ revenue` (invoice date) | ✅ | ✅ true L2 |
-| **Bookings** | `v_daily_bookings_by_bu` | `Σ bookings` (received date) | ✅ | ➕ **parent-L1 rollup** |
 | **OTD** | `v_otd_daily_by_bu` | `Σ on_time ÷ Σ shipped` | ✅ | ➕ **parent-L1 rollup** |
 | **Quality (Good %)** | `remake_rate_daily_l2` | `1 − Σ lab_fault ÷ Σ shipped` ⚠️ | ✅ | ✅ true L2 |
-| **Remake** | `remake_rate_daily_l2` | `Σ remakes ÷ Σ shipped` | ✅ | ✅ true L2 |
 | **TAT** | `v_tat_daily_by_bu` | shipped-weighted `avg_tat_business_days` | ✅ | ⚠️ **n/a** (no L2 source) |
+| ~~Bookings~~ *(removed from display)* | `v_daily_bookings_by_bu` | `Σ bookings` (received date) | — | — |
+| ~~Remake~~ *(removed from display)* | `remake_rate_daily_l2` | `Σ remakes ÷ Σ shipped` | — | — |
 
-**MTD caps:** ratio metrics (OTD, TAT, Quality, Remake) end at `yest` (last business
-day); Revenue/Bookings end at `today`. **Day-Prior rule** and working-day logic are
+**MTD caps:** ratio metrics (OTD, TAT, Quality) end at `yest` (last business
+day); Revenue ends at `today`. **Day-Prior rule** and working-day logic are
 ported verbatim from the COO board. **Color:** Killian blue good / `#E0625A` bad —
-OTD ≥ 92%, TAT ≤ 5 business days, Quality ≥ 95%, Remake ≤ 5%. No green/amber, no emoji.
+OTD ≥ 92%, TAT ≤ 5 business days, Quality ≥ 95%. No green/amber, no emoji.
 
 ---
 

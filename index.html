@@ -410,8 +410,8 @@ textarea.form-input{min-height:80px;resize:vertical}
 .range-btn.active { background:var(--white); color:var(--spectrum-blue); }
 .range-btn:focus { outline:none; box-shadow:0 0 0 2px rgba(255,255,255,.4); }
 .otd-date-lbl { font-size:14px; font-weight:700; color:var(--white); min-width:150px; text-align:center; }
-.otd-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:20px; }
-@media (max-width:1100px){ .otd-grid { grid-template-columns:repeat(3,1fr); } }
+.otd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+@media (max-width:1100px){ .otd-grid { grid-template-columns:repeat(2,1fr); } }
 .otd-kpi { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; border-top:3px solid var(--killian-blue); box-shadow:var(--shadow); text-align:center; position:relative; }
 .otd-kpi.green { border-top-color:#16a34a; }
 .otd-kpi.red { border-top-color:#dc2626; }
@@ -2479,10 +2479,8 @@ textarea.form-input{min-height:80px;resize:vertical}
       <div class="bu-ad-note" id="bu-ad-note" style="display:none">Note: this is an <strong>L2 business unit</strong>. The current data warehouse only exposes <strong>Revenue, Quality, and Remake</strong> at this level (via <code>daily_revenue_l2</code> / <code>remake_rate_daily_l2</code>). <strong>OTD, TAT, and Bookings</strong> exist only at the L1 level, so they show <strong>n/a</strong> here until an L2 view is added.</div>
       <div class="otd-grid">
         <div class="otd-kpi"><div class="otd-kval" id="h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-ad" id="ad-revenue"></div><div class="otd-target" id="target-revenue">Target: —</div><div class="trend-badge" id="trend-revenue" style="display:none"></div></div>
-        <div class="otd-kpi"><div class="otd-kval" id="h-bookings">—</div><div class="otd-klbl">Bookings</div><div class="otd-ad" id="ad-bookings"></div><div class="otd-target" id="target-bookings">Target: —</div><div class="trend-badge" id="trend-bookings" style="display:none"></div></div>
         <div class="otd-kpi"><div class="otd-kval" id="h-otd">—</div><div class="otd-klbl">On Time Delivery</div><div class="otd-ad" id="ad-otd"></div><div class="otd-target" id="target-otd">Target: —</div><div class="trend-badge" id="trend-otd" style="display:none"></div></div>
         <div class="otd-kpi"><div class="otd-kval" id="h-quality">—</div><div class="otd-klbl">Quality</div><div class="otd-ad" id="ad-quality"></div><div class="otd-target" id="target-quality">Target: —</div><div class="trend-badge" id="trend-quality" style="display:none"></div></div>
-        <div class="otd-kpi"><div class="otd-kval" id="h-remake">—</div><div class="otd-klbl">Remake Rate</div><div class="otd-ad" id="ad-remake"></div><div class="otd-target" id="target-remake">Target: —</div><div class="trend-badge" id="trend-remake" style="display:none"></div></div>
         <div class="otd-kpi"><div class="otd-kval" id="h-tat">—</div><div class="otd-klbl">Turn Around Time</div><div class="otd-ad" id="ad-tat"></div><div class="otd-target" id="target-tat">Target: —</div><div class="trend-badge" id="trend-tat" style="display:none"></div></div>
 
         <!-- Heat map popover (absolutely positioned inside the grid; doesn't take a grid cell) -->
@@ -4632,7 +4630,7 @@ async function fetchBUMetrics(start, end) {
   return out;
 }
 
-const BU_TILE_IDS = ['revenue','bookings','otd','quality','remake','tat'];
+const BU_TILE_IDS = ['revenue','otd','quality','tat'];
 async function loadBUHealth() {
   updateHealthBanner();
   BU_TILE_IDS.forEach(k => {
@@ -4785,7 +4783,7 @@ function renderHealthTiles(m) {
   updateTrendBadge('tat',      m.tatAvg,     tTat, false); // lower TAT is better
 
   // ── L2 tabs: mark metrics with no L2 source as "n/a", and show a note ──
-  ['revenue','bookings','otd','quality','remake','tat'].forEach(k => {
+  ['revenue','otd','quality','tat'].forEach(k => {
     if (!metricAvailableForBU(k)) {
       const el = g('h-' + k);
       if (el) { el.textContent = 'n/a'; el.style.color = '#9ca3af'; el.title = 'Not available at the L2 BU level in the current data warehouse'; }
@@ -5221,10 +5219,8 @@ function cancelHide()   { if (_heatHideTimer) { clearTimeout(_heatHideTimer); _h
 function attachHeatHandlers() {
   const map = [
     { id: 'h-revenue',  metric: 'revenue'  },
-    { id: 'h-bookings', metric: 'bookings' },
     { id: 'h-otd',      metric: 'otd'      },
     { id: 'h-quality',  metric: 'quality'  },
-    { id: 'h-remake',   metric: 'remake'   },
     { id: 'h-tat',      metric: 'tat'      }
   ];
   map.forEach(({ id, metric }) => {
