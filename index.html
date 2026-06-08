@@ -2456,9 +2456,9 @@ textarea.form-input{min-height:80px;resize:vertical}
     <div><div class="otd-hero-title" id="otd-hero-title">FULL ARCH OPERATIONS</div><div class="otd-hero-name" id="otd-hero-name">Full Arch Business Unit Health</div></div>
     <div class="otd-date-nav">
       <div class="range-segmented" role="tablist" aria-label="Date range">
-        <button class="range-btn"        data-range="day"     onclick="setRange('day')">Day</button>
+        <button class="range-btn active" data-range="day"     onclick="setRange('day')">Day</button>
         <button class="range-btn"        data-range="week"    onclick="setRange('week')">Week</button>
-        <button class="range-btn active" data-range="month"   onclick="setRange('month')">Month</button>
+        <button class="range-btn"        data-range="month"   onclick="setRange('month')">Month</button>
         <button class="range-btn"        data-range="quarter" onclick="setRange('quarter')">Quarter</button>
         <button class="range-btn"        data-range="year"    onclick="setRange('year')">Year</button>
       </div>
@@ -3693,10 +3693,7 @@ let otdDate = (function(){
 })();
 let otdRows = {};
 let otdInited = false;
-// Default to Month (MTD) so the board lands on populated numbers. A single-day
-// view of *today* is structurally empty for the ratio tiles (OTD/Quality/Remake/TAT
-// cap at the last business day, which is before today), so 'day' is a poor landing.
-let otdRange = 'month'; // 'day' | 'week' | 'month' | 'quarter' | 'year'
+let otdRange = 'day'; // 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 /* ──────── Range helpers ──────── */
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
