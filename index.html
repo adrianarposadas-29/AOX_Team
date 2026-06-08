@@ -4457,11 +4457,16 @@ async function saveTarget(op, inputEl) {
 //               served by the module's v_aox_*_l2ad views.
 // `showAD` tabs also surface the analog/digital sub-split (NON-standard axis),
 // shown as smaller secondary numbers inside the L2 BU.
+// `parentL1` on an L2 tab is the business_unit_l1 its product L2 rolls up to.
+// The MD source-of-truth exposes OTD/Bookings only at L1 (no L2 view exists), so
+// L2 tabs borrow their parent L1's OTD/Bookings as a labeled rollup. Verified live:
+//   Restorative L1 = {Crown & Bridge, Implant}; Removable L1 = {Analog Denture,
+//   Nightguard, Printed Product}. Quality/Revenue stay at true L2.
 const BU_DATA_FILTER = {
   'full-arch':       { axis: 'l1', keys: ['Full Arch'],       showAD: false },
-  'crown-bridge':    { axis: 'l2', keys: ['Crown & Bridge'],  showAD: true  },
-  'digital-product': { axis: 'l2', keys: ['Printed Product'], showAD: true  }, // tab labeled "Printed Product"
-  'analog-dentures': { axis: 'l2', keys: ['Analog Denture'],  showAD: true  }
+  'crown-bridge':    { axis: 'l2', keys: ['Crown & Bridge'],  parentL1: 'Restorative', showAD: true  },
+  'digital-product': { axis: 'l2', keys: ['Printed Product'], parentL1: 'Removable',   showAD: true  }, // tab labeled "Printed Product"
+  'analog-dentures': { axis: 'l2', keys: ['Analog Denture'],  parentL1: 'Removable',   showAD: true  }
 };
 // PostgREST in.() list for business_unit_l1 or business_unit_l2 (quoted for spaces)
 function axisInFilter(axis, keys) {
@@ -4479,8 +4484,10 @@ function metricsFromAcc(a) {
     revenue:    a.revenue,
     bookings:   a.bookings,
     otdPct:     a.shipped > 0 ? Math.round(a.onTime / a.shipped * 100) : null,
-    // Good %: share of remakes NOT lab's fault. Undefined (—) on zero remakes.
-    qualityPct: a.totalRemake > 0 ? Math.round((1 - a.labFault / a.totalRemake) * 100) : null,
+    // Good %: share of SHIPPED cases with no lab-fault remake (= 1 − lab_fault ÷ shipped).
+    // Matches the sister board's definition; this DIVERGES from the SKDLA source-of-truth
+    // doc's remakes-denominator formula on purpose (see PRD §5). Null when nothing shipped.
+    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 100) : null,
     remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
     tatAvg:     a.tatW > 0 ? a.tatSum / a.tatW : null,
     total:      a.shipped
@@ -4548,13 +4555,32 @@ async function loadL2Acc(start, endRatio, endRevenue, l2keys) {
   (rev || []).forEach(r => { a.revenue += parseFloat(r.revenue) || 0; });
   return a;
 }
-// L2 display metrics. OTD / TAT / Bookings are null (no L2 source exists).
+// Parent-L1 rollup for OTD + Bookings on an L2 tab. The MD source-of-truth has no
+// L2-level OTD/Bookings view, so an L2 BU borrows its parent L1's number from the
+// canonical L1 views (Crown & Bridge → Restorative; Analog/Printed → Removable).
+// This is an L1 ROLLUP — it includes sibling L2s (e.g. Restorative also covers
+// Implant) — surfaced under the L2 tab and labeled as such in renderHealthTiles.
+async function loadL1RollupOtdBookings(start, endRatio, endRevenue, parentL1) {
+  const l1In = l1InFilter([parentL1]);
+  const [otd, book] = await Promise.all([
+    sbFetch(`v_otd_daily_by_bu?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}&limit=10000`),
+    sbFetch(`v_daily_bookings_by_bu?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}&limit=10000`)
+  ]);
+  let onTime = 0, shipped = 0, bookings = 0;
+  (otd  || []).forEach(r => { shipped += +(r.shipped_case_count||0); onTime += +(r.on_time_case_count||0); });
+  (book || []).forEach(r => { bookings += parseFloat(r.bookings) || 0; });
+  return { otdPct: shipped > 0 ? Math.round(onTime / shipped * 100) : null, bookings };
+}
+
+// L2 display metrics. OTD / TAT / Bookings are null here (no L2 source); fetchBUMetrics
+// overwrites OTD + Bookings with the parent-L1 rollup. TAT stays null.
 function metricsFromAccL2(a) {
   return {
     revenue:    a.revenue,
     bookings:   null,
     otdPct:     null,
-    qualityPct: a.totalRemake > 0 ? Math.round((1 - a.labFault / a.totalRemake) * 100) : null,
+    // Good %: 1 − lab_fault ÷ shipped (shipped-denominator, matches sister board; see PRD §5).
+    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 100) : null,
     remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
     tatAvg:     null,
     total:      a.shipped
@@ -4565,7 +4591,11 @@ function metricsFromAccL2(a) {
 function metricAvailableForBU(metric) {
   const f = BU_DATA_FILTER[currentBU];
   if (!f || f.axis !== 'l2') return true;
-  return metric === 'revenue' || metric === 'quality' || metric === 'remake';
+  // L2: Revenue / Quality / Remake at true L2; OTD + Bookings via parent-L1 rollup
+  // (when a parentL1 is mapped). TAT has no L2 source and stays "n/a".
+  if (metric === 'revenue' || metric === 'quality' || metric === 'remake') return true;
+  if ((metric === 'otd' || metric === 'bookings') && f.parentL1) return true;
+  return false;
 }
 
 // Returns the BU's metrics. L1 tabs use the canonical views; L2 (operational-BU)
@@ -4582,11 +4612,23 @@ async function fetchBUMetrics(start, end) {
     return metricsFromAcc(await loadCanonicalAcc(start, endRatio, endRevenue, filter.keys));
   }
 
-  // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product) from
-  // existing L2 views. Revenue / Quality / Remake only; OTD / TAT / Bookings have
-  // no L2 source and render as "n/a".
-  const out = metricsFromAccL2(await loadL2Acc(start, endRatio, endRevenue, filter.keys));
+  // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product).
+  // Revenue / Quality / Remake come from the true-L2 views. OTD + Bookings have no
+  // L2 source, so they borrow the parent-L1 rollup (Restorative / Removable).
+  // TAT has no L2 source and stays "n/a".
+  const [l2acc, roll] = await Promise.all([
+    loadL2Acc(start, endRatio, endRevenue, filter.keys),
+    filter.parentL1
+      ? loadL1RollupOtdBookings(start, endRatio, endRevenue, filter.parentL1)
+      : Promise.resolve(null)
+  ]);
+  const out = metricsFromAccL2(l2acc);
   out.l2limited = true;
+  if (roll) {
+    out.otdPct   = roll.otdPct;
+    out.bookings = roll.bookings;
+    out.rollupL1 = filter.parentL1;   // drives the "L1 rollup" tile label
+  }
   return out;
 }
 
@@ -4750,8 +4792,26 @@ function renderHealthTiles(m) {
     }
     const adEl = g('ad-' + k); if (adEl) adEl.innerHTML = '';   // no analog/digital split in existing-views mode
   });
+  // L2 tabs: OTD + Bookings are a parent-L1 rollup, not BU-specific — label them.
+  if (m.rollupL1) {
+    ['otd','bookings'].forEach(k => {
+      const adEl = g('ad-' + k);
+      if (adEl) adEl.innerHTML = '<span class="ad-k">' + m.rollupL1 + '</span> L1 rollup';
+    });
+  }
   const note = g('bu-ad-note');
-  if (note) note.style.display = m.l2limited ? '' : 'none';
+  if (note) {
+    note.style.display = m.l2limited ? '' : 'none';
+    if (m.l2limited) {
+      note.innerHTML = 'Note: this is an <strong>L2 business unit</strong>. '
+        + '<strong>Revenue, Quality, and Remake</strong> are reported at true L2 '
+        + '(via <code>daily_revenue_l2</code> / <code>remake_rate_daily_l2</code>). '
+        + '<strong>OTD</strong> and <strong>Bookings</strong> have no L2 source in the data '
+        + 'warehouse, so they show the parent <strong>' + (m.rollupL1 || 'L1') + '</strong> rollup '
+        + '(<code>v_otd_daily_by_bu</code> / <code>v_daily_bookings_by_bu</code>) — which also '
+        + 'includes sibling L2s. <strong>TAT</strong> shows <strong>n/a</strong> until an L2 view is added.';
+    }
+  }
 
   attachHeatHandlers();
 }
@@ -4826,12 +4886,13 @@ function heatBucketize(dayArr, range) {
     if (!g) {
       const rep = p.rep > today ? today : p.rep;          // never click into the future
       g = groups[p.key] = { day: rep, label: p.label, _key: p.key,
-        shipped_case_count: 0, on_time_case_count: 0, remake_case_count: 0,
+        shipped_case_count: 0, on_time_case_count: 0, otd_shipped: 0, remake_case_count: 0,
         lab_fault_remake_count: 0, tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
       order.push(p.key);
     }
     g.shipped_case_count     += d.shipped_case_count;
     g.on_time_case_count     += d.on_time_case_count;
+    g.otd_shipped            += d.otd_shipped;
     g.remake_case_count      += d.remake_case_count;
     g.lab_fault_remake_count += d.lab_fault_remake_count;
     g.tat_sum += d.tat_sum; g.tat_n += d.tat_n;
@@ -4871,15 +4932,17 @@ const METRIC_DEFS = {
   otd: {
     label: 'On Time Delivery',
     sub: 'Daily OTD % — click any day to jump to it',
-    valueFn: r => r.shipped_case_count > 0 ? Math.round(r.on_time_case_count / r.shipped_case_count * 100) : null,
+    // Uses otd_shipped (the OTD view's own denominator) so an L2 tab can show its
+    // parent-L1 OTD without disturbing the L2 remake/quality denominator.
+    valueFn: r => r.otd_shipped > 0 ? Math.round(r.on_time_case_count / r.otd_shipped * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
     colorFor: v => v == null ? '#f3f4f6' : v >= 92 ? '#1882C7' : '#E0625A'
   },
   quality: {
     label: 'Quality',
-    sub: 'Daily Good % (1 − lab-fault ÷ total remakes) — click any day to jump to it',
-    valueFn: r => r.remake_case_count > 0 ? Math.round((1 - r.lab_fault_remake_count / r.remake_case_count) * 100) : null,
+    sub: 'Daily Good % (1 − lab-fault ÷ shipped) — click any day to jump to it',
+    valueFn: r => r.shipped_case_count > 0 ? Math.round((1 - r.lab_fault_remake_count / r.shipped_case_count) * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
     colorFor: v => v == null ? '#f3f4f6' : v >= 95 ? '#1882C7' : '#E0625A'
@@ -4942,7 +5005,7 @@ async function loadHeatData() {
       const d = new Date(startStr + 'T12:00:00'), end = new Date(toISO(endDate) + 'T12:00:00');
       while (d <= end) {
         const key = toISO(d);
-        byDay[key] = { day: key, shipped_case_count: 0, on_time_case_count: 0,
+        byDay[key] = { day: key, shipped_case_count: 0, on_time_case_count: 0, otd_shipped: 0,
                        remake_case_count: 0, lab_fault_remake_count: 0,
                        tat_sum: 0, tat_n: 0, revenue: 0, bookings: 0 };
         d.setDate(d.getDate() + 1);
@@ -4961,11 +5024,16 @@ async function loadHeatData() {
     const addBook = r => { const d = byDay[r.report_date]; if (d) d.bookings += parseFloat(r.bookings) || 0; };
 
     if (filter.axis === 'l2') {
-      // Existing L2 views only: Revenue + Quality/Remake. (OTD/TAT/Bookings heat
-      // is blocked for L2 tabs in showHeatMap — no L2 source.)
-      const [rl2, revenue] = await Promise.all([
+      // L2 views give Revenue + Quality/Remake at true L2. OTD + Bookings have no L2
+      // source, so borrow the parent-L1 rollup (Restorative / Removable). OTD's own
+      // denominator goes in otd_shipped so it never disturbs the L2 remake/quality
+      // denominator (shipped_case_count). TAT has no L2 source and stays blank.
+      const l1In = filter.parentL1 ? l1InFilter([filter.parentL1]) : null;
+      const [rl2, revenue, otd, bookings] = await Promise.all([
         sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
-        sbFetch(`daily_revenue_l2?report_date=gte.${startStr}${inF}&limit=10000`)
+        sbFetch(`daily_revenue_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        l1In ? sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`)      : Promise.resolve([]),
+        l1In ? sbFetch(`v_daily_bookings_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`) : Promise.resolve([])
       ]);
       (rl2 || []).forEach(r => {
         const d = byDay[r.report_date]; if (!d) return;
@@ -4974,6 +5042,12 @@ async function loadHeatData() {
         d.lab_fault_remake_count += +(r.lab_fault_remake_count || 0);
       });
       (revenue || []).forEach(addRev);
+      (otd || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        d.on_time_case_count += +(r.on_time_case_count || 0);
+        d.otd_shipped        += +(r.shipped_case_count || 0);
+      });
+      (bookings || []).forEach(addBook);
     } else {
       const [otd, tat, rl2, revenue, bookings] = await Promise.all([
         sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${inF}&limit=10000`),
@@ -4986,6 +5060,7 @@ async function loadHeatData() {
         const d = byDay[r.report_date]; if (!d) return;
         d.shipped_case_count += +(r.shipped_case_count || 0);
         d.on_time_case_count += +(r.on_time_case_count || 0);
+        d.otd_shipped        += +(r.shipped_case_count || 0);
       });
       (tat || []).forEach(r => {
         const d = byDay[r.report_date]; if (!d) return;
@@ -5035,7 +5110,11 @@ async function showHeatMap(metric) {
     pop.style.left = centerX + 'px';
   }
 
-  document.getElementById('bu-heatmap-title').textContent = (BU_LABELS[currentBU] || 'Full Arch') + ' — ' + def.label;
+  // OTD + Bookings on an L2 tab are the parent-L1 rollup — say so in the title.
+  const _f = BU_DATA_FILTER[currentBU];
+  const _isRollup = _f && _f.axis === 'l2' && _f.parentL1 && (metric === 'otd' || metric === 'bookings');
+  document.getElementById('bu-heatmap-title').textContent =
+      (BU_LABELS[currentBU] || 'Full Arch') + ' — ' + def.label + (_isRollup ? ' (' + _f.parentL1 + ' L1 rollup)' : '');
   const gran = { day: 'Daily (30 days)', week: 'Weekly (4 weeks)', month: 'Monthly (12 months)',
                  quarter: 'Quarterly (4 quarters)', year: 'Yearly' }[otdRange || 'day'] || 'Daily';
   document.getElementById('bu-heatmap-sub').textContent = gran + ' — click to jump';
