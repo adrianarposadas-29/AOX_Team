@@ -46,8 +46,11 @@ view/formula rows are kept below for reference and could be re-added.
 | ~~Bookings~~ *(removed from display)* | `v_daily_bookings_by_bu` | `Σ bookings` (received date) | — | — |
 | ~~Remake~~ *(removed from display)* | `remake_rate_daily_l2` | `Σ remakes ÷ Σ shipped` | — | — |
 
-**MTD caps:** ratio metrics (OTD, TAT, Quality) end at `yest` (last business
-day); Revenue ends at `today`. **Day-Prior rule** and working-day logic are
+**Range caps:** for **Month / Quarter / Year**, ratio metrics (OTD, TAT, Quality)
+end at `yest` (last business day) to avoid same-day denominator drift; Revenue ends
+at `today`. For **Day / Week**, ratios end at `today` too, so the current period
+shows **live** (numbers move through the day as cases ship) instead of blanking out.
+**Day-Prior rule** and working-day logic are
 ported verbatim from the COO board. **Color:** Killian blue good / `#E0625A` bad —
 OTD ≥ 92%, TAT ≤ 5 business days, Quality ≥ 95%. No green/amber, no emoji.
 

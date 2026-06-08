@@ -4602,7 +4602,13 @@ async function fetchBUMetrics(start, end) {
   const filter = BU_DATA_FILTER[currentBU] || { axis: 'l1', keys: ['Full Arch'], showAD: false };
   const today = localToday();
   const yest  = computeYest(today, null);
-  const endRatio   = end < yest  ? end : yest;   // OTD / TAT / Quality / Remake
+  // Day/Week show the CURRENT period live: ratio metrics (OTD/TAT/Quality) cap at
+  // `today`, not the last business day — so a single-day "today" view isn't blank.
+  // (These numbers will move through the day as more cases ship.) Month/Quarter/Year
+  // keep the standard MTD cap at `yest` to avoid same-day denominator drift on the
+  // headline aggregates.
+  const liveRatios = (otdRange === 'day' || otdRange === 'week');
+  const endRatio   = liveRatios ? (end < today ? end : today) : (end < yest ? end : yest);
   const endRevenue = end < today ? end : today;  // Revenue / Bookings
 
   if (filter.axis === 'l1') {
