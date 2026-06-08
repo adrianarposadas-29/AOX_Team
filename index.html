@@ -2367,6 +2367,15 @@ textarea.form-input{min-height:80px;resize:vertical}
           <textarea class="form-input" id="f-issue" rows="3" placeholder="Describe the risk, action, issue, or decision…"></textarea>
         </div>
         <div class="form-group">
+          <label class="form-label">Business Unit</label>
+          <select class="form-input" id="f-bu-m">
+            <option value="full-arch">Full Arch</option>
+            <option value="crown-bridge">Crown &amp; Bridge</option>
+            <option value="digital-product">Printed Product</option>
+            <option value="analog-dentures">Analog Dentures</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">Type</label>
           <select class="form-input" id="f-type-m">
             <option>Risk</option><option>Action</option><option>Issue</option><option>Decision</option>
@@ -2799,10 +2808,11 @@ function renderAll(){
    KPIs
 ════════════════════════════════════════════ */
 function renderKPIs(){
-  const open = DATA.filter(d=>d.status==='Open').length;
-  const inprog = DATA.filter(d=>d.status==='In Progress').length;
-  const crit = DATA.filter(d=>d.priority==='Critical'&&d.status!=='Closed').length;
-  const total = DATA.length;
+  const D = buData();
+  const open = D.filter(d=>d.status==='Open').length;
+  const inprog = D.filter(d=>d.status==='In Progress').length;
+  const crit = D.filter(d=>d.priority==='Critical'&&d.status!=='Closed').length;
+  const total = D.length;
   const thisWeek = getClosedThisWeek().length;
 
   document.getElementById('k-open').textContent = open;
@@ -2821,7 +2831,7 @@ function getClosedThisWeek(){
   const monday = new Date(now);
   monday.setDate(now.getDate()-now.getDay()+(now.getDay()===0?-6:1));
   monday.setHours(0,0,0,0);
-  return DATA.filter(d=>{
+  return buData().filter(d=>{
     if(d.status!=='Closed') return false;
     const dc = d.date_closed ? new Date(d.date_closed) : null;
     return dc && dc >= monday;
@@ -2829,6 +2839,7 @@ function getClosedThisWeek(){
 }
 
 function renderDashboard(){
+  const D = buData();
   // Closed this week
   const closed = getClosedThisWeek();
   const cwEl = document.getElementById('closed-this-week');
@@ -2851,7 +2862,7 @@ function renderDashboard(){
 
   // By type bars
   const types = ['Risk','Action','Issue','Decision'];
-  const openItems = DATA.filter(d=>d.status!=='Closed');
+  const openItems = D.filter(d=>d.status!=='Closed');
   const maxType = Math.max(...types.map(t=>openItems.filter(d=>d.type===t).length),1);
   document.getElementById('type-bars').innerHTML = types.map(t=>{
     const cnt = openItems.filter(d=>d.type===t).length;
@@ -2885,10 +2896,10 @@ function renderDashboard(){
     </table>`;
 
   // Donut ring
-  const total = DATA.length;
-  const cl = DATA.filter(d=>d.status==='Closed').length;
-  const op = DATA.filter(d=>d.status==='Open').length;
-  const ip = DATA.filter(d=>d.status==='In Progress').length;
+  const total = D.length;
+  const cl = D.filter(d=>d.status==='Closed').length;
+  const op = D.filter(d=>d.status==='Open').length;
+  const ip = D.filter(d=>d.status==='In Progress').length;
   const pct = total ? Math.round(cl/total*100) : 0;
   const r=36, circ=2*Math.PI*r;
   const slices = [
@@ -2914,7 +2925,7 @@ function renderDashboard(){
 
   // Priority bars
   const priorities = ['Critical','High','Medium','Low'];
-  const allOpen = DATA.filter(d=>d.status!=='Closed');
+  const allOpen = D.filter(d=>d.status!=='Closed');
   const maxP = Math.max(...priorities.map(p=>allOpen.filter(d=>d.priority===p).length),1);
   const pcols = {Critical:'#dc2626',High:'#c2410c',Medium:'#a16207',Low:'#16a34a'};
   document.getElementById('priority-bars').innerHTML = priorities.map(p=>{
@@ -2943,6 +2954,13 @@ function renderDashboard(){
 /* ════════════════════════════════════════════
    TABLE
 ════════════════════════════════════════════ */
+// RAID items scoped to the Business Unit selected at the top of the page.
+// Legacy rows without a business_unit fall back to 'full-arch'.
+function buData(){
+  const bu = (typeof currentBU !== 'undefined' && currentBU) ? currentBU : 'full-arch';
+  return DATA.filter(d => (d.business_unit || 'full-arch') === bu);
+}
+
 function getFiltered(){
   const search = document.getElementById('search-input').value.toLowerCase();
   const fType = document.getElementById('f-type').value;
@@ -2950,7 +2968,7 @@ function getFiltered(){
   const fPriority = document.getElementById('f-priority').value;
   const fOwner = document.getElementById('f-owner').value;
 
-  return DATA.filter(d=>{
+  return buData().filter(d=>{
     if(fType && d.type!==fType) return false;
     if(fStatus && d.status!==fStatus) return false;
     if(fPriority && d.priority!==fPriority) return false;
@@ -2972,7 +2990,7 @@ function getFiltered(){
 
 function renderTable(){
   const rows = getFiltered();
-  document.getElementById('table-count').textContent = `Showing ${rows.length} of ${DATA.length} items`;
+  document.getElementById('table-count').textContent = `Showing ${rows.length} of ${buData().length} items`;
   const tbody = document.getElementById('raid-tbody');
   if(!rows.length){ tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">No items match your filters</td></tr>`; return; }
 
@@ -3029,7 +3047,7 @@ function clearFilters(){
 }
 
 function populateOwnerFilter(){
-  const owners = [...new Set(DATA.map(d=>d.owner||'Unassigned')
+  const owners = [...new Set(buData().map(d=>d.owner||'Unassigned')
     .flatMap(o=>o.split(/[&\/,]/).map(x=>x.trim())).filter(Boolean))].sort();
   const sel = document.getElementById('f-owner');
   const cur = sel.value;
@@ -3042,7 +3060,7 @@ function populateOwnerFilter(){
 function renderMatrix(){
   const fStatus = document.getElementById('m-status').value;
   const fType = document.getElementById('m-type').value;
-  let items = DATA.filter(d=>{
+  let items = buData().filter(d=>{
     if(fStatus && d.status!==fStatus) return false;
     if(fType && d.type!==fType) return false;
     return true;
@@ -3103,6 +3121,8 @@ function openModal(id=null){
   document.getElementById('modal-title').textContent = d ? 'Edit RAID Item' : 'Add RAID Item';
   document.getElementById('edit-id').value = d?.id||'';
   document.getElementById('f-issue').value = d?.issue||'';
+  // New items default to the BU selected at the top of the page; edits keep their stored BU
+  document.getElementById('f-bu-m').value = d?.business_unit || currentBU || 'full-arch';
   document.getElementById('f-type-m').value = d?.type||'Risk';
   document.getElementById('f-severity-m').value = d?.severity||'High';
   document.getElementById('f-mitigation').value = d?.mitigation||'';
@@ -3128,6 +3148,7 @@ async function saveItem(){
   const id = document.getElementById('edit-id').value;
   const payload = {
     issue: document.getElementById('f-issue').value.trim(),
+    business_unit: document.getElementById('f-bu-m').value,
     type: document.getElementById('f-type-m').value,
     severity: document.getElementById('f-severity-m').value,
     mitigation: document.getElementById('f-mitigation').value.trim(),
@@ -3605,8 +3626,59 @@ function renderEOD(){
 document.getElementById('assign-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeAssignModal(); });
 
 // Boot
-loadData();
+const _autoReloadState = readAutoReloadState(); // snapshot saved before an hourly auto-reload (or null)
+restoreActiveTab(_autoReloadState);             // tab/view can be restored immediately
+loadData().then(() => restoreFiltersAndScroll(_autoReloadState)); // filters/scroll need data first
 setInterval(loadData, 120000); // poll every 2 min
+setInterval(() => {
+  // Remember the current tab/view, filters and scroll, then full page reload every hour
+  const mainTab = document.querySelector('.nav-tab.active');
+  try {
+    sessionStorage.setItem('autoReloadState', JSON.stringify({
+      tab: mainTab ? mainTab.dataset.tab : 'otd',
+      sub: _lastImprovementSub || 'dashboard',
+      search: document.getElementById('search-input')?.value || '',
+      fType: document.getElementById('f-type')?.value || '',
+      fStatus: document.getElementById('f-status')?.value || '',
+      fPriority: document.getElementById('f-priority')?.value || '',
+      fOwner: document.getElementById('f-owner')?.value || '',
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    }));
+  } catch (e) {}
+  window.location.reload();
+}, 3600000);
+
+// Read + clear the pre-reload snapshot. Returns the parsed object, or null.
+function readAutoReloadState(){
+  try {
+    const raw = sessionStorage.getItem('autoReloadState');
+    sessionStorage.removeItem('autoReloadState');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// Re-open the tab/view that was active before an hourly auto-reload
+function restoreActiveTab(s){
+  if (!s || !s.tab || s.tab === 'otd') return; // 'otd' is the default already shown on load
+  const tabEl = document.querySelector(`.nav-tab[data-tab="${s.tab}"]`);
+  if (!tabEl) return;
+  if (s.tab === 'improvement' && s.sub) _lastImprovementSub = s.sub;
+  setTab(s.tab, tabEl);
+}
+
+// Restore RAID-log search/filters and scroll position after data has loaded
+function restoreFiltersAndScroll(s){
+  if (!s) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set('search-input', s.search);
+  set('f-type', s.fType);
+  set('f-status', s.fStatus);
+  set('f-priority', s.fPriority);
+  set('f-owner', s.fOwner); // options are rebuilt by populateOwnerFilter() during loadData
+  if (s.search || s.fType || s.fStatus || s.fPriority || s.fOwner) renderTable();
+  if (s.scrollX || s.scrollY) window.scrollTo(s.scrollX || 0, s.scrollY || 0);
+}
 </script>
 
 <!-- Mobile FAB -->
@@ -4118,6 +4190,14 @@ function setBU(bu){
       buildTargetsTable();
       fillBUTargets();
     });
+  }
+  // Re-scope the Improvement Actions views (RAID log, KPIs, dashboard, matrix) to the new BU
+  if (typeof DATA !== 'undefined' && Array.isArray(DATA)) {
+    renderKPIs();
+    renderDashboard();
+    populateOwnerFilter();
+    renderTable();
+    renderMatrix();
   }
 }
 /* Restore saved BU on load */
