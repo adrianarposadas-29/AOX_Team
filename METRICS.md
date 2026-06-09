@@ -67,10 +67,10 @@ view/formula rows are kept below for reference and could be re-added.
 
 | Tile | View(s) | Formula | L1 tabs | L2 tabs |
 |---|---|---|---|---|
-| **Revenue** | `v_daily_revenue_by_bu` (L1) · `daily_revenue_l2` (L2) | `Σ revenue` (invoice date) | ✅ | ✅ true L2 |
-| **OTD** | L1: `v_otd_daily_by_bu` · L2: `otd_daily_l2` | `Σ on_time ÷ Σ shipped` | ✅ | ✅ **true L2** |
-| **Quality (Good %)** | `remake_rate_daily_l2` | `1 − Σ lab_fault ÷ Σ shipped` ⚠️ | ✅ | ✅ true L2 |
-| **TAT** | L1: `v_tat_daily_by_bu` · L2: `tat_daily_l2` | shipped/case-weighted avg business days | ✅ | ✅ **true L2** |
+| **Revenue** | `v_daily_revenue_by_bu` (L1) · `daily_revenue_by_bu_l2` (L2) | `Σ revenue` (invoice date) | ✅ | ✅ Ops parity |
+| **OTD** | L1: `v_otd_daily_by_bu` · L2: `v_aox_otd_daily_l2_ops` | `Σ on_time ÷ Σ shipped` (Univ. excluded) | ✅ | ✅ **Ops parity** |
+| **Quality (Good %)** | L2: `v_aox_remake_daily_l2_ops` | `1 − Σ lab_fault ÷ Σ shipped` ⚠️ (Univ. excluded) | ✅ | ✅ Ops parity |
+| **TAT** | L1: `v_tat_daily_by_bu` · L2: `v_aox_tat_daily_l2_ops` | `Σ tat_sum ÷ Σ case_count` (Univ. excluded) | ✅ | ✅ **Ops parity** |
 | ~~Bookings~~ *(removed from display)* | L1: `v_daily_bookings_by_bu` · L2: `v_aox_bookings_daily_l2` | `Σ bookings` (received date) | — | ✅ true L2 |
 | ~~Remake~~ *(removed from display)* | `remake_rate_daily_l2` | `Σ remakes ÷ Σ shipped` | — | — |
 

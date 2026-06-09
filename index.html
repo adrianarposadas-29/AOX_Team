@@ -4607,11 +4607,12 @@ function metricsFromAcc(a) {
   return {
     revenue:    a.revenue,
     bookings:   a.bookings,
-    otdPct:     a.shipped > 0 ? Math.round(a.onTime / a.shipped * 100) : null,
+    // One-decimal precision to match the iOS Operations panel (e.g. 92.8%, not 93%).
+    otdPct:     a.shipped > 0 ? Math.round(a.onTime / a.shipped * 1000) / 10 : null,
     // Good %: share of SHIPPED cases with no lab-fault remake (= 1 − lab_fault ÷ shipped).
     // Matches the sister board's definition; this DIVERGES from the SKDLA source-of-truth
     // doc's remakes-denominator formula on purpose (see PRD §5). Null when nothing shipped.
-    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 100) : null,
+    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 1000) / 10 : null,
     remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
     tatAvg:     a.tatW > 0 ? a.tatSum / a.tatW : null,
     total:      a.shipped
@@ -4659,15 +4660,17 @@ async function loadCanonicalAcc(start, endRatio, endRevenue, l1list) {
   return a;
 }
 
-// L2 operational-BU revenue + quality/remake from the always-present true-L2 views:
-//   daily_revenue_l2     → revenue
-//   remake_rate_daily_l2 → shipped, total remakes, lab-fault remakes
-// OTD / TAT / Bookings come separately from loadL2OtdTatBookings (true-L2 views).
+// L2 operational-BU revenue + quality/remake — Operations-dashboard parity
+// (get_dashboard_snapshot). Both read the public views that mirror it 1:1:
+//   daily_revenue_by_bu_l2      → revenue (reporting.daily_revenue_by_bu, NOT daily_revenue_l2)
+//   v_aox_remake_daily_l2_ops   → shipped, total remakes, lab-fault remakes
+//                                 (fact_case_shipped, University market segment EXCLUDED)
+// OTD / TAT / Bookings come separately from loadL2OtdTatBookings.
 async function loadL2Acc(start, endRatio, endRevenue, filter) {
   const l2In = buL2FilterStr(filter);
   const [rl2, rev] = await Promise.all([
-    sbFetch(`remake_rate_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
-    sbFetch(`daily_revenue_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
+    sbFetch(`v_aox_remake_daily_l2_ops?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`daily_revenue_by_bu_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
   ]);
   const a = blankAcc();
   (rl2 || []).forEach(r => {
@@ -4681,16 +4684,16 @@ async function loadL2Acc(start, endRatio, endRevenue, filter) {
 
 // TRUE-L2 OTD / TAT / Bookings from the public views (source-of-truth
 // crm_get_bu_board_l2 parity — see sql/2026-06-09_aox_l2_otd_tat_bookings_public_views.sql):
-//   otd_daily_l2            → on_time ÷ shipped (OTD's own denominator)
-//   tat_daily_l2            → Σ tat_sum ÷ Σ case_count   (raw sums, not avg_tat_business_days)
+//   v_aox_otd_daily_l2_ops → on_time ÷ shipped  (fact_case_shipped, University EXCLUDED)
+//   v_aox_tat_daily_l2_ops → Σ tat_sum ÷ Σ case_count  (University EXCLUDED)
 //   v_aox_bookings_daily_l2 → Σ bookings (received date)
 // sbFetch THROWS on a non-200; fetchBUMetrics / the heat map catch it and simply
 // leave the metric null (renders "—") — no parent-L1 rollup, no label.
 async function loadL2OtdTatBookings(start, endRatio, endRevenue, filter) {
   const l2In = buL2FilterStr(filter);
   const [otd, tat, book] = await Promise.all([
-    sbFetch(`otd_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
-    sbFetch(`tat_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`v_aox_otd_daily_l2_ops?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`v_aox_tat_daily_l2_ops?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
     sbFetch(`v_aox_bookings_daily_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
   ]);
   let onTime = 0, otdShipped = 0, tatSum = 0, tatW = 0, bookings = 0;
@@ -4699,7 +4702,7 @@ async function loadL2OtdTatBookings(start, endRatio, endRevenue, filter) {
   (tat  || []).forEach(r => { tatSum += parseFloat(r.tat_sum)||0; tatW += +(r.case_count||0); });
   (book || []).forEach(r => { bookings += parseFloat(r.bookings) || 0; });
   return {
-    otdPct: otdShipped > 0 ? Math.round(onTime / otdShipped * 100) : null,
+    otdPct: otdShipped > 0 ? Math.round(onTime / otdShipped * 1000) / 10 : null,
     tatAvg: tatW > 0 ? tatSum / tatW : null,
     bookings
   };
@@ -4713,7 +4716,7 @@ function metricsFromAccL2(a) {
     bookings:   null,
     otdPct:     null,
     // Good %: 1 − lab_fault ÷ shipped (shipped-denominator, matches sister board; see PRD §5).
-    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 100) : null,
+    qualityPct: a.shipped > 0 ? Math.round((1 - a.labFault / a.shipped) * 1000) / 10 : null,
     remakePct:  a.shipped > 0 ? Math.round(a.totalRemake / a.shipped * 1000) / 10 : null,
     tatAvg:     null,
     total:      a.shipped
@@ -4740,10 +4743,11 @@ async function fetchBUMetrics(start, end) {
   }
 
   // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product / Implant
-  // / Nightguard). Everything is TRUE L2: Revenue / Quality / Remake from the L2
-  // views, OTD / TAT / Bookings from the true-L2 views (otd_daily_l2 / tat_daily_l2
-  // / v_aox_bookings_daily_l2). No parent-L1 rollup. If a view is ever unavailable
-  // the metric simply stays null (renders "—"), with no fallback and no label.
+  // / Nightguard). True L2, matching the ClearPath Operations dashboard
+  // (get_dashboard_snapshot): Revenue from daily_revenue_by_bu_l2; Quality / OTD /
+  // TAT from the University-excluded fact_case_shipped views (v_aox_*_daily_l2_ops).
+  // No parent-L1 rollup. If a view is ever unavailable the metric simply stays null
+  // (renders "—"), with no fallback and no label.
   const l2acc = await loadL2Acc(start, endRatio, endRevenue, filter);
   const out = metricsFromAccL2(l2acc);
   out.l2limited = true;
@@ -4873,12 +4877,12 @@ function renderHealthTiles(m) {
   }
   // On Time Delivery — good vs the BU's target (or standard 92%)
   if (g('h-otd')) {
-    g('h-otd').textContent = m.otdPct != null ? m.otdPct + '%' : '—';
+    g('h-otd').textContent = m.otdPct != null ? m.otdPct.toFixed(1) + '%' : '—';
     g('h-otd').style.color = m.otdPct == null ? '' : thresholdColor('otd', m.otdPct, buTargetFor('otd', otdRange));
   }
   // Quality (Good %) — good vs target (or standard 95%); — on zero-remake days
   if (g('h-quality')) {
-    g('h-quality').textContent = m.qualityPct != null ? m.qualityPct + '%' : '—';
+    g('h-quality').textContent = m.qualityPct != null ? m.qualityPct.toFixed(1) + '%' : '—';
     g('h-quality').style.color = m.qualityPct == null ? KPI_GOOD : thresholdColor('quality', m.qualityPct, buTargetFor('quality', otdRange));
   }
   // Remake rate — good vs target (or standard ≤ 5%; lower is better)
@@ -5148,10 +5152,10 @@ async function loadHeatData() {
       // true-L2 views. OTD's own denominator goes in otd_shipped so it never
       // disturbs the L2 remake/quality denominator (shipped_case_count).
       const [rl2, revenue, otd, tat, bookings] = await Promise.all([
-        sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
-        sbFetch(`daily_revenue_l2?report_date=gte.${startStr}${inF}&limit=10000`),
-        sbFetch(`otd_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
-        sbFetch(`tat_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_aox_remake_daily_l2_ops?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`daily_revenue_by_bu_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_aox_otd_daily_l2_ops?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_aox_tat_daily_l2_ops?report_date=gte.${startStr}${inF}&limit=10000`),
         sbFetch(`v_aox_bookings_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`)
       ]);
       (rl2 || []).forEach(r => {
