@@ -1039,10 +1039,16 @@ textarea.form-input{min-height:80px;resize:vertical}
     <div class="topbar-bu">
       <span class="topbar-bu-lbl">Business Unit</span>
       <select class="topbar-bu-select" id="bu-select" onchange="setBU(this.value)" title="Choose business unit">
-        <option value="full-arch">Full Arch</option>
+        <option value="all">All</option>
         <option value="crown-bridge">Crown &amp; Bridge</option>
+        <option value="implant">Implant</option>
+        <option value="full-arch">Full Arch</option>
+        <option value="high-esthetics">High Esthetics</option>
         <option value="digital-product">Printed Product</option>
-        <option value="analog-dentures">Analog Dentures</option>
+        <option value="analog-dentures">Analog Denture</option>
+        <option value="hardware">Hardware</option>
+        <option value="samples">Samples</option>
+        <option value="other">Other</option>
       </select>
     </div>
     <button class="btn btn-ghost" id="hdr-refresh-btn" onclick="loadData()" title="Refresh data" style="margin-left:4px">↻ Refresh</button>
@@ -2955,9 +2961,12 @@ function renderDashboard(){
    TABLE
 ════════════════════════════════════════════ */
 // RAID items scoped to the Business Unit selected at the top of the page.
-// Legacy rows without a business_unit fall back to 'full-arch'.
+// 'all' shows every BU; 'other' also picks up legacy 'nightguard' rows (Nightguard is
+// folded into Other). Legacy rows without a business_unit fall back to 'full-arch'.
 function buData(){
-  const bu = (typeof currentBU !== 'undefined' && currentBU) ? currentBU : 'full-arch';
+  const bu = (typeof currentBU !== 'undefined' && currentBU) ? currentBU : 'all';
+  if (bu === 'all')   return DATA.slice();
+  if (bu === 'other') return DATA.filter(d => ['other','nightguard'].includes(d.business_unit || ''));
   return DATA.filter(d => (d.business_unit || 'full-arch') === bu);
 }
 
@@ -3745,9 +3754,20 @@ const OTD_OPS_BY_BU = {
   'analog-dentures': [
     "Case Review", "Design", "Pour Trim Mount",
     "Outsource Out", "Outsource In", "Final QC"
-  ]
+  ],
+  // Added BU tabs (2026-06-09). The scorecard / heat map key off BU_DATA_FILTER, not
+  // this map — only the manual ops-entry grid (currentOps) reads it. Seeded empty
+  // so setBU accepts the key ([] is truthy); the real per-operation step lists are
+  // an OPEN ITEM for the team to supply. 'all' and 'other' are aggregate views with
+  // no single ops flow. (Nightguard is folded into 'other' — see prd/notes.md.)
+  'high-esthetics': [],
+  'implant': [],
+  'all': [],
+  'hardware': [],
+  'samples': [],
+  'other': []
 };
-let currentBU = 'full-arch';
+let currentBU = 'all';
 function currentOps() { return OTD_OPS_BY_BU[currentBU] || []; }
 let otdDate = (function(){
   // Use LOCAL today, not UTC. toISOString() returns UTC, which can be a different
@@ -4166,13 +4186,19 @@ function otdExport() {
    BUSINESS UNIT SELECTOR
 ════════════════════════════════════════════ */
 const BU_LABELS = {
-  'full-arch':       'Full Arch',
+  'all':             'All',
   'crown-bridge':    'Crown & Bridge',
+  'implant':         'Implant',
+  'full-arch':       'Full Arch',
+  'high-esthetics':  'High Esthetics',
   'digital-product': 'Printed Product',
-  'analog-dentures': 'Analog Dentures'
+  'analog-dentures': 'Analog Denture',
+  'hardware':        'Hardware',
+  'samples':         'Samples',
+  'other':           'Other'
 };
 function setBU(bu){
-  currentBU = OTD_OPS_BY_BU[bu] ? bu : 'full-arch';
+  currentBU = OTD_OPS_BY_BU[bu] ? bu : 'all';
   try { localStorage.setItem('skdla-bu', bu); } catch(e){}
   // If OTD tab has been opened, rebuild its cards and reload data for the new BU
   if (typeof otdInited !== 'undefined' && otdInited) {
@@ -4527,22 +4553,50 @@ async function saveTarget(op, inputEl) {
 //               served by the module's v_aox_*_l2ad views.
 // `showAD` tabs also surface the analog/digital sub-split (NON-standard axis),
 // shown as smaller secondary numbers inside the L2 BU.
-// `parentL1` on an L2 tab is the business_unit_l1 its product L2 rolls up to.
-// The MD source-of-truth exposes OTD/Bookings only at L1 (no L2 view exists), so
-// L2 tabs borrow their parent L1's OTD/Bookings as a labeled rollup. Verified live:
-//   Restorative L1 = {Crown & Bridge, Implant}; Removable L1 = {Analog Denture,
-//   Nightguard, Printed Product}. Quality/Revenue stay at true L2.
+// Every BU reads true metrics: L1 tabs via the canonical L1 views, L2 tabs via the
+// true-L2 views (Revenue/Quality plus OTD/TAT/Bookings). `parentL1` is retained only
+// as taxonomy reference (the business_unit_l1 each product L2 belongs to) — it no
+// longer drives any rollup. Verified live: Restorative L1 = {Crown & Bridge, Implant};
+// Removable L1 = {Analog Denture, Nightguard, Printed Product}.
+// Every tab reads the L2 snapshot keyed on business_unit_l2, matching the iOS app's
+// crm_get_bu_board_l2 exactly. Single-BU tabs use `keys` (in.). Aggregate tabs use
+// `notKeys` (not.in.) — an EXCLUSION list — so any unlisted or revenue-only BU (e.g.
+// `Alloy`, which has revenue but no shipped cases, so it never appears in otd_daily_l2)
+// is still counted. `''` excludes the blank/unmapped bucket, exactly like the RPC's
+// `nullif(trim(business_unit_l2),'') is not null`. See prd/notes.md.
+const BROKEN_OUT_L2 = ['Crown & Bridge','Implant','Full Arch','High Esthetics',
+  'Printed Product','Analog Denture','Hardware','Samples'];   // BUs with their own tab
 const BU_DATA_FILTER = {
-  'full-arch':       { axis: 'l1', keys: ['Full Arch'],       showAD: false },
-  'crown-bridge':    { axis: 'l2', keys: ['Crown & Bridge'],  parentL1: 'Restorative', showAD: true  },
-  'digital-product': { axis: 'l2', keys: ['Printed Product'], parentL1: 'Removable',   showAD: true  }, // tab labeled "Printed Product"
-  'analog-dentures': { axis: 'l2', keys: ['Analog Denture'],  parentL1: 'Removable',   showAD: true  }
+  'all':             { axis: 'l2', notKeys: [''],                       showAD: false }, // whole lab (all non-blank)
+  'crown-bridge':    { axis: 'l2', keys: ['Crown & Bridge'],  parentL1: 'Restorative',     showAD: true  },
+  'implant':         { axis: 'l2', keys: ['Implant'],         parentL1: 'Restorative',     showAD: true  },
+  'full-arch':       { axis: 'l2', keys: ['Full Arch'],       parentL1: 'Full Arch',       showAD: true  },
+  'high-esthetics':  { axis: 'l2', keys: ['High Esthetics'],  parentL1: 'High Esthetics',  showAD: true  },
+  'digital-product': { axis: 'l2', keys: ['Printed Product'], parentL1: 'Removable',       showAD: true  }, // tab labeled "Printed Product"
+  'analog-dentures': { axis: 'l2', keys: ['Analog Denture'],  parentL1: 'Removable',       showAD: true  },
+  'hardware':        { axis: 'l2', keys: ['Hardware'],        parentL1: 'Other',           showAD: false },
+  'samples':         { axis: 'l2', keys: ['Samples'],         parentL1: 'Other',           showAD: false },
+  'other':           { axis: 'l2', notKeys: BROKEN_OUT_L2.concat(['']), showAD: false }   // everything not broken out (incl. Alloy)
 };
 // PostgREST in.() list for business_unit_l1 or business_unit_l2 (quoted for spaces)
 function axisInFilter(axis, keys) {
   const col = axis === 'l2' ? 'business_unit_l2' : 'business_unit_l1';
   const list = (keys || []).map(v => '"' + v.replace(/"/g, '\\"') + '"').join(',');
   return '&' + col + '=in.(' + encodeURIComponent(list) + ')';
+}
+// business_unit_l2 filter for a BU filter object: `notKeys` → exclusion (for aggregate
+// tabs, so unlisted/revenue-only BUs are still counted); else `keys` → in.
+// NOTE: PostgREST's not.in.("") ignores a lone empty string, so a single exclusion uses
+// neq. instead (which DOES exclude '' — i.e. the blank/unmapped bucket, like the RPC).
+function buL2FilterStr(filter) {
+  if (filter && filter.notKeys) {
+    if (filter.notKeys.length === 1) {
+      return '&business_unit_l2=neq.' + encodeURIComponent(filter.notKeys[0]);
+    }
+    const list = filter.notKeys.map(v => '"' + String(v).replace(/"/g, '\\"') + '"').join(',');
+    return '&business_unit_l2=not.in.(' + encodeURIComponent(list) + ')';
+  }
+  return axisInFilter(filter && filter.axis ? filter.axis : 'l2', filter ? filter.keys : []);
 }
 function l1InFilter(l1list) { return axisInFilter('l1', l1list); }
 function blankAcc() {
@@ -4605,13 +4659,12 @@ async function loadCanonicalAcc(start, endRatio, endRevenue, l1list) {
   return a;
 }
 
-// L2 operational-BU metrics from EXISTING views only (no new objects):
+// L2 operational-BU revenue + quality/remake from the always-present true-L2 views:
 //   daily_revenue_l2     → revenue
 //   remake_rate_daily_l2 → shipped, total remakes, lab-fault remakes
-// OTD / TAT / Bookings have NO L2-level view in the current warehouse, so they
-// stay unavailable at L2 (see metricAvailableForBU / the L2 note).
-async function loadL2Acc(start, endRatio, endRevenue, l2keys) {
-  const l2In = axisInFilter('l2', l2keys);
+// OTD / TAT / Bookings come separately from loadL2OtdTatBookings (true-L2 views).
+async function loadL2Acc(start, endRatio, endRevenue, filter) {
+  const l2In = buL2FilterStr(filter);
   const [rl2, rev] = await Promise.all([
     sbFetch(`remake_rate_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
     sbFetch(`daily_revenue_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
@@ -4625,25 +4678,35 @@ async function loadL2Acc(start, endRatio, endRevenue, l2keys) {
   (rev || []).forEach(r => { a.revenue += parseFloat(r.revenue) || 0; });
   return a;
 }
-// Parent-L1 rollup for OTD + Bookings on an L2 tab. The MD source-of-truth has no
-// L2-level OTD/Bookings view, so an L2 BU borrows its parent L1's number from the
-// canonical L1 views (Crown & Bridge → Restorative; Analog/Printed → Removable).
-// This is an L1 ROLLUP — it includes sibling L2s (e.g. Restorative also covers
-// Implant) — surfaced under the L2 tab and labeled as such in renderHealthTiles.
-async function loadL1RollupOtdBookings(start, endRatio, endRevenue, parentL1) {
-  const l1In = l1InFilter([parentL1]);
-  const [otd, book] = await Promise.all([
-    sbFetch(`v_otd_daily_by_bu?report_date=gte.${start}&report_date=lte.${endRatio}${l1In}&limit=10000`),
-    sbFetch(`v_daily_bookings_by_bu?report_date=gte.${start}&report_date=lte.${endRevenue}${l1In}&limit=10000`)
+
+// TRUE-L2 OTD / TAT / Bookings from the public views (source-of-truth
+// crm_get_bu_board_l2 parity — see sql/2026-06-09_aox_l2_otd_tat_bookings_public_views.sql):
+//   otd_daily_l2            → on_time ÷ shipped (OTD's own denominator)
+//   tat_daily_l2            → Σ tat_sum ÷ Σ case_count   (raw sums, not avg_tat_business_days)
+//   v_aox_bookings_daily_l2 → Σ bookings (received date)
+// sbFetch THROWS on a non-200; fetchBUMetrics / the heat map catch it and simply
+// leave the metric null (renders "—") — no parent-L1 rollup, no label.
+async function loadL2OtdTatBookings(start, endRatio, endRevenue, filter) {
+  const l2In = buL2FilterStr(filter);
+  const [otd, tat, book] = await Promise.all([
+    sbFetch(`otd_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`tat_daily_l2?report_date=gte.${start}&report_date=lte.${endRatio}${l2In}&limit=10000`),
+    sbFetch(`v_aox_bookings_daily_l2?report_date=gte.${start}&report_date=lte.${endRevenue}${l2In}&limit=10000`)
   ]);
-  let onTime = 0, shipped = 0, bookings = 0;
-  (otd  || []).forEach(r => { shipped += +(r.shipped_case_count||0); onTime += +(r.on_time_case_count||0); });
+  let onTime = 0, otdShipped = 0, tatSum = 0, tatW = 0, bookings = 0;
+  // OTD's shipped is kept SEPARATE from the remake/quality `shipped` denominator.
+  (otd  || []).forEach(r => { otdShipped += +(r.shipped_case_count||0); onTime += +(r.on_time_case_count||0); });
+  (tat  || []).forEach(r => { tatSum += parseFloat(r.tat_sum)||0; tatW += +(r.case_count||0); });
   (book || []).forEach(r => { bookings += parseFloat(r.bookings) || 0; });
-  return { otdPct: shipped > 0 ? Math.round(onTime / shipped * 100) : null, bookings };
+  return {
+    otdPct: otdShipped > 0 ? Math.round(onTime / otdShipped * 100) : null,
+    tatAvg: tatW > 0 ? tatSum / tatW : null,
+    bookings
+  };
 }
 
-// L2 display metrics. OTD / TAT / Bookings are null here (no L2 source); fetchBUMetrics
-// overwrites OTD + Bookings with the parent-L1 rollup. TAT stays null.
+// L2 display metrics. OTD / TAT / Bookings start null here; fetchBUMetrics fills
+// them from the true-L2 views (loadL2OtdTatBookings). Null stays "—".
 function metricsFromAccL2(a) {
   return {
     revenue:    a.revenue,
@@ -4656,22 +4719,10 @@ function metricsFromAccL2(a) {
     total:      a.shipped
   };
 }
-// Which metrics exist for the active BU. L1 tabs: all six. L2 tabs: only the
-// three that have an existing L2 view.
-function metricAvailableForBU(metric) {
-  const f = BU_DATA_FILTER[currentBU];
-  if (!f || f.axis !== 'l2') return true;
-  // L2: Revenue / Quality / Remake at true L2; OTD + Bookings via parent-L1 rollup
-  // (when a parentL1 is mapped). TAT has no L2 source and stays "n/a".
-  if (metric === 'revenue' || metric === 'quality' || metric === 'remake') return true;
-  if ((metric === 'otd' || metric === 'bookings') && f.parentL1) return true;
-  return false;
-}
-
 // Returns the BU's metrics. L1 tabs use the canonical views; L2 (operational-BU)
 // tabs use the v_aox_*_l2ad views and add an `.ad` analog/digital sub-split.
 async function fetchBUMetrics(start, end) {
-  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l1', keys: ['Full Arch'], showAD: false };
+  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l2', keys: ['Full Arch'], showAD: false };
   const today = localToday();
   const yest  = computeYest(today, null);
   // Day/Week show the CURRENT period live: ratio metrics (OTD/TAT/Quality) cap at
@@ -4688,22 +4739,21 @@ async function fetchBUMetrics(start, end) {
     return metricsFromAcc(await loadCanonicalAcc(start, endRatio, endRevenue, filter.keys));
   }
 
-  // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product).
-  // Revenue / Quality / Remake come from the true-L2 views. OTD + Bookings have no
-  // L2 source, so they borrow the parent-L1 rollup (Restorative / Removable).
-  // TAT has no L2 source and stays "n/a".
-  const [l2acc, roll] = await Promise.all([
-    loadL2Acc(start, endRatio, endRevenue, filter.keys),
-    filter.parentL1
-      ? loadL1RollupOtdBookings(start, endRatio, endRevenue, filter.parentL1)
-      : Promise.resolve(null)
-  ]);
+  // L2 operational BU (Crown & Bridge / Analog Denture / Printed Product / Implant
+  // / Nightguard). Everything is TRUE L2: Revenue / Quality / Remake from the L2
+  // views, OTD / TAT / Bookings from the true-L2 views (otd_daily_l2 / tat_daily_l2
+  // / v_aox_bookings_daily_l2). No parent-L1 rollup. If a view is ever unavailable
+  // the metric simply stays null (renders "—"), with no fallback and no label.
+  const l2acc = await loadL2Acc(start, endRatio, endRevenue, filter);
   const out = metricsFromAccL2(l2acc);
   out.l2limited = true;
-  if (roll) {
-    out.otdPct   = roll.otdPct;
-    out.bookings = roll.bookings;
-    out.rollupL1 = filter.parentL1;   // drives the "L1 rollup" tile label
+  try {
+    const x = await loadL2OtdTatBookings(start, endRatio, endRevenue, filter);
+    out.otdPct   = x.otdPct;
+    out.tatAvg   = x.tatAvg;
+    out.bookings = x.bookings;
+  } catch (e) {
+    console.error('L2 OTD/TAT/Bookings load failed', e);   // leave null → "—"
   }
   return out;
 }
@@ -4787,6 +4837,26 @@ function formatTargetValue(metric, value) {
 // No green / amber (palette rule). Standard cut points per the metrics doc.
 const KPI_GOOD = '#1882C7';   // Killian Blue
 const KPI_BAD  = '#E0625A';   // brand red
+
+// The BU's TARGET for a metric at the active range (e.g. Full Arch TAT = 15 days),
+// or null when none is set. Keyed `metric|range` in buTargetsData.
+function buTargetFor(metric, range) {
+  const row = (typeof buTargetsData !== 'undefined' && buTargetsData) ? buTargetsData[metric + '|' + range] : null;
+  return (row && row.target_value != null) ? Number(row.target_value) : null;
+}
+// Good (blue) vs bad (red) for a threshold metric. Compares to the BU's TARGET when
+// one is set — so Full Arch's 12-day TAT reads GOOD against its 15-day target instead
+// of bad against the flat 5-day standard — else the ClearPath standard cut point.
+// otd/quality: higher is better; tat/remake: lower is better.
+function thresholdColor(metric, v, target) {
+  if (v == null) return '#f3f4f6';
+  const lowerBetter = (metric === 'tat' || metric === 'remake');
+  const std = metric === 'otd' ? 92 : metric === 'quality' ? 95 : 5;
+  const t = (target != null && !isNaN(target)) ? target : std;
+  const good = lowerBetter ? (v <= t) : (v >= t);
+  return good ? KPI_GOOD : KPI_BAD;
+}
+
 function renderHealthTiles(m) {
   const g = id => document.getElementById(id);
   // Revenue
@@ -4801,32 +4871,29 @@ function renderHealthTiles(m) {
       ? '$' + Math.round(m.bookings).toLocaleString()
       : '—';
   }
-  // On Time Delivery — standard target 92%
+  // On Time Delivery — good vs the BU's target (or standard 92%)
   if (g('h-otd')) {
     g('h-otd').textContent = m.otdPct != null ? m.otdPct + '%' : '—';
-    g('h-otd').style.color = m.otdPct == null ? '' : (m.otdPct >= 92 ? KPI_GOOD : KPI_BAD);
+    g('h-otd').style.color = m.otdPct == null ? '' : thresholdColor('otd', m.otdPct, buTargetFor('otd', otdRange));
   }
-  // Quality (Good %) — standard target 95%; — on zero-remake days
+  // Quality (Good %) — good vs target (or standard 95%); — on zero-remake days
   if (g('h-quality')) {
     g('h-quality').textContent = m.qualityPct != null ? m.qualityPct + '%' : '—';
-    g('h-quality').style.color = m.qualityPct == null ? KPI_GOOD : (m.qualityPct >= 95 ? KPI_GOOD : KPI_BAD);
+    g('h-quality').style.color = m.qualityPct == null ? KPI_GOOD : thresholdColor('quality', m.qualityPct, buTargetFor('quality', otdRange));
   }
-  // Remake rate — standard ≤ 5% good (lower is better)
+  // Remake rate — good vs target (or standard ≤ 5%; lower is better)
   if (g('h-remake')) {
     g('h-remake').textContent = m.remakePct != null ? m.remakePct + '%' : '—';
-    g('h-remake').style.color = m.remakePct == null ? '' : (m.remakePct <= 5 ? KPI_GOOD : KPI_BAD);
+    g('h-remake').style.color = m.remakePct == null ? '' : thresholdColor('remake', m.remakePct, buTargetFor('remake', otdRange));
   }
-  // Turn Around Time — standard ≤ 5 business days good
+  // Turn Around Time — good vs the BU's target (or standard ≤ 5 business days)
   if (g('h-tat')) {
     g('h-tat').textContent = m.tatAvg != null ? m.tatAvg.toFixed(1) + ' days' : '—';
-    g('h-tat').style.color = m.tatAvg == null ? '' : (m.tatAvg <= 5 ? KPI_GOOD : KPI_BAD);
+    g('h-tat').style.color = m.tatAvg == null ? '' : thresholdColor('tat', m.tatAvg, buTargetFor('tat', otdRange));
   }
 
   // ── Targets + trend badges (vs target, not vs prior period) ──
-  const tgtFor = metric => {
-    const row = buTargetsData?.[metric + '|' + otdRange];
-    return (row && row.target_value != null) ? Number(row.target_value) : null;
-  };
+  const tgtFor = metric => buTargetFor(metric, otdRange);
   const setTargetLine = (id, value, metric) => {
     const el = g(id);
     if (!el) return;
@@ -4860,21 +4927,11 @@ function renderHealthTiles(m) {
   updateTrendBadge('remake',   m.remakePct,  tRmk, false); // lower remake is better
   updateTrendBadge('tat',      m.tatAvg,     tTat, false); // lower TAT is better
 
-  // ── L2 tabs: mark metrics with no L2 source as "n/a", and show a note ──
-  ['revenue','otd','quality','tat'].forEach(k => {
-    if (!metricAvailableForBU(k)) {
-      const el = g('h-' + k);
-      if (el) { el.textContent = 'n/a'; el.style.color = '#9ca3af'; el.title = 'Not available at the L2 BU level in the current data warehouse'; }
-    }
-    const adEl = g('ad-' + k); if (adEl) adEl.innerHTML = '';   // no analog/digital split in existing-views mode
+  // Every BU (L1 and L2) reads true metrics; a null value renders "—" via the tile
+  // blocks above. No rollup, no labels, no notes. Clear any sub-tile text.
+  ['revenue','otd','quality','tat','bookings'].forEach(k => {
+    const adEl = g('ad-' + k); if (adEl) adEl.innerHTML = '';
   });
-  // L2 tabs: OTD + Bookings are a parent-L1 rollup, not BU-specific — label them.
-  if (m.rollupL1) {
-    ['otd','bookings'].forEach(k => {
-      const adEl = g('ad-' + k);
-      if (adEl) adEl.innerHTML = '<span class="ad-k">' + m.rollupL1 + '</span> L1 rollup';
-    });
-  }
   attachHeatHandlers();
 }
 
@@ -4999,7 +5056,7 @@ const METRIC_DEFS = {
     valueFn: r => r.otd_shipped > 0 ? Math.round(r.on_time_case_count / r.otd_shipped * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
-    colorFor: v => v == null ? '#f3f4f6' : v >= 92 ? '#1882C7' : '#E0625A'
+    colorFor: (v, maxVal, target) => thresholdColor('otd', v, target)
   },
   quality: {
     label: 'Quality',
@@ -5007,7 +5064,7 @@ const METRIC_DEFS = {
     valueFn: r => r.shipped_case_count > 0 ? Math.round((1 - r.lab_fault_remake_count / r.shipped_case_count) * 100) : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
-    colorFor: v => v == null ? '#f3f4f6' : v >= 95 ? '#1882C7' : '#E0625A'
+    colorFor: (v, maxVal, target) => thresholdColor('quality', v, target)
   },
   remake: {
     label: 'Remake Rate',
@@ -5015,7 +5072,7 @@ const METRIC_DEFS = {
     valueFn: r => r.shipped_case_count > 0 ? Math.round(r.remake_case_count / r.shipped_case_count * 1000) / 10 : null,
     fmtFull: v => v == null ? '—' : v + '%',
     fmtCell: v => v == null ? '—' : v + '%',
-    colorFor: v => v == null ? '#f3f4f6' : v <= 5 ? '#1882C7' : '#E0625A'
+    colorFor: (v, maxVal, target) => thresholdColor('remake', v, target)
   },
   tat: {
     label: 'Turn Around Time',
@@ -5023,7 +5080,7 @@ const METRIC_DEFS = {
     valueFn: r => r.avg_tat_business_days,
     fmtFull: v => v == null ? '—' : v.toFixed(1) + ' days',
     fmtCell: v => v == null ? '—' : v.toFixed(1),
-    colorFor: v => v == null ? '#f3f4f6' : v <= 5 ? '#1882C7' : '#E0625A'
+    colorFor: (v, maxVal, target) => thresholdColor('tat', v, target)
   }
 };
 
@@ -5055,9 +5112,10 @@ async function loadHeatData() {
   const endDate = new Date(); // today
   const startStr = heatWindowStart(range, endDate);
 
-  // L1 tabs use canonical views; L2 tabs use the existing L2 views.
-  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l1', keys: ['Full Arch'] };
-  const inF = axisInFilter(filter.axis, filter.keys);
+  // All product BUs read the L2 snapshot (business_unit_l2); the L1-view path remains
+  // only as a defensive fallback for an unmapped BU key.
+  const filter = BU_DATA_FILTER[currentBU] || { axis: 'l2', keys: ['Full Arch'] };
+  const inF = buL2FilterStr(filter);
 
   try {
     // One bucket per calendar day across the window. Field names mirror the
@@ -5086,16 +5144,15 @@ async function loadHeatData() {
     const addBook = r => { const d = byDay[r.report_date]; if (d) d.bookings += parseFloat(r.bookings) || 0; };
 
     if (filter.axis === 'l2') {
-      // L2 views give Revenue + Quality/Remake at true L2. OTD + Bookings have no L2
-      // source, so borrow the parent-L1 rollup (Restorative / Removable). OTD's own
-      // denominator goes in otd_shipped so it never disturbs the L2 remake/quality
-      // denominator (shipped_case_count). TAT has no L2 source and stays blank.
-      const l1In = filter.parentL1 ? l1InFilter([filter.parentL1]) : null;
-      const [rl2, revenue, otd, bookings] = await Promise.all([
+      // All true L2: Revenue + Quality/Remake, plus OTD / TAT / Bookings from the
+      // true-L2 views. OTD's own denominator goes in otd_shipped so it never
+      // disturbs the L2 remake/quality denominator (shipped_case_count).
+      const [rl2, revenue, otd, tat, bookings] = await Promise.all([
         sbFetch(`remake_rate_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
         sbFetch(`daily_revenue_l2?report_date=gte.${startStr}${inF}&limit=10000`),
-        l1In ? sbFetch(`v_otd_daily_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`)      : Promise.resolve([]),
-        l1In ? sbFetch(`v_daily_bookings_by_bu?report_date=gte.${startStr}${l1In}&limit=10000`) : Promise.resolve([])
+        sbFetch(`otd_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`tat_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`),
+        sbFetch(`v_aox_bookings_daily_l2?report_date=gte.${startStr}${inF}&limit=10000`)
       ]);
       (rl2 || []).forEach(r => {
         const d = byDay[r.report_date]; if (!d) return;
@@ -5108,6 +5165,11 @@ async function loadHeatData() {
         const d = byDay[r.report_date]; if (!d) return;
         d.on_time_case_count += +(r.on_time_case_count || 0);
         d.otd_shipped        += +(r.shipped_case_count || 0);
+      });
+      (tat || []).forEach(r => {
+        const d = byDay[r.report_date]; if (!d) return;
+        d.tat_sum += parseFloat(r.tat_sum) || 0;
+        d.tat_n   += +(r.case_count || 0);
       });
       (bookings || []).forEach(addBook);
     } else {
@@ -5172,11 +5234,7 @@ async function showHeatMap(metric) {
     pop.style.left = centerX + 'px';
   }
 
-  // OTD + Bookings on an L2 tab are the parent-L1 rollup — say so in the title.
-  const _f = BU_DATA_FILTER[currentBU];
-  const _isRollup = _f && _f.axis === 'l2' && _f.parentL1 && (metric === 'otd' || metric === 'bookings');
-  document.getElementById('bu-heatmap-title').textContent =
-      (BU_LABELS[currentBU] || 'Full Arch') + ' — ' + def.label + (_isRollup ? ' (' + _f.parentL1 + ' L1 rollup)' : '');
+  setHeatTitle(metric);
   const gran = { day: 'Daily (30 days)', week: 'Weekly (4 weeks)', month: 'Monthly (12 months)',
                  quarter: 'Quarterly (4 quarters)', year: 'Yearly' }[otdRange || 'day'] || 'Daily';
   document.getElementById('bu-heatmap-sub').textContent = gran + ' — click to jump';
@@ -5191,15 +5249,18 @@ async function showHeatMap(metric) {
   const data = await loadHeatData();
   const liveMetric = pop.dataset.metric || metric;
   if (!pop.classList.contains('show')) return;
+  if (liveMetric !== metric) setHeatTitle(liveMetric);   // metric changed during load
   renderHeatMap(grid2, data, liveMetric);
 }
 
+// Heat-map popover title: "<BU> — <Metric>". No rollup suffix.
+function setHeatTitle(metric) {
+  const def = METRIC_DEFS[metric]; if (!def) return;
+  const el = document.getElementById('bu-heatmap-title');
+  if (el) el.textContent = (BU_LABELS[currentBU] || 'Full Arch') + ' — ' + def.label;
+}
+
 function renderHeatMap(grid, data, metric) {
-  if (!metricAvailableForBU(metric)) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:13px">Not available at the L2 business-unit level in the current data warehouse.</div>';
-    const lg = document.getElementById('bu-heatmap-legend'); if (lg) lg.innerHTML = '';
-    return;
-  }
   if (!data || data.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">No data available.</div>';
     document.getElementById('bu-heatmap-legend').innerHTML = '';
@@ -5207,6 +5268,9 @@ function renderHeatMap(grid, data, metric) {
   }
   const def = METRIC_DEFS[metric];
   const range = otdRange || 'day';
+  // Color threshold metrics against the BU's target for this range (TAT/OTD/Quality);
+  // revenue/bookings ignore it (magnitude gradient).
+  const target = buTargetFor(metric, range);
 
   if (range === 'day') {
     // Daily calendar (weekday-aligned), last 30 days.
@@ -5220,7 +5284,7 @@ function renderHeatMap(grid, data, metric) {
     for (let i = 0; i < startPad; i++) cells.push('<div></div>');
     data.forEach(d => {
       const val = def.valueFn(d);
-      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal);
+      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal, target);
       const fg = (val == null || bg === '#f3f4f6') ? '#9ca3af' : pickTextColor(bg);
       const cls = ['bu-hm-cell']; if (d.day === otdDate) cls.push('selected'); if (val == null) cls.push('empty');
       cells.push(`<div class="${cls.join(' ')}" style="background:${bg};color:${fg}" onclick="heatMapClick('${d.day}')" title="${d.day}: ${def.fmtFull(val)}"><div class="bu-hm-date">${parseInt(d.day.split('-')[2],10)}</div><div class="bu-hm-val">${def.fmtCell(val)}</div></div>`);
@@ -5236,7 +5300,7 @@ function renderHeatMap(grid, data, metric) {
     const selKey = periodKeyOf(otdDate, range).key;
     grid.innerHTML = buckets.map(b => {
       const val = def.valueFn(b);
-      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal);
+      const bg = val == null ? '#f3f4f6' : def.colorFor(val, maxVal, target);
       const fg = (val == null || bg === '#f3f4f6') ? '#9ca3af' : pickTextColor(bg);
       const cls = ['bu-hm-cell','period']; if (b._key === selKey) cls.push('selected'); if (val == null) cls.push('empty');
       return `<div class="${cls.join(' ')}" style="background:${bg};color:${fg}" onclick="heatMapClick('${b.day}')" title="${b.label}: ${def.fmtFull(val)}"><div class="bu-hm-plabel">${b.label}</div><div class="bu-hm-val">${def.fmtCell(val)}</div></div>`;
@@ -5248,16 +5312,22 @@ function renderHeatMap(grid, data, metric) {
   const sw = c => `<span class="bu-hm-legend-swatch" style="background:${c}"></span>`;
   const nd = ` &nbsp; · &nbsp; ${sw('#f3f4f6')} No data`;
   const GOOD = '#1882C7', BAD = '#E0625A';
+  // Legend cut points follow the BU's target for this range when set, else the standard.
+  const tgt = buTargetFor(metric, otdRange || 'day');
   if (metric === 'revenue' || metric === 'bookings') {
     legend.innerHTML = `Low ${sw('#dbeafe')}${sw(interp('#dbeafe','#1882C7',0.5))}${sw('#1882C7')} High` + nd;
   } else if (metric === 'tat') {
-    legend.innerHTML = `${sw(GOOD)} ≤5 days &nbsp; ${sw(BAD)} &gt;5` + nd;
+    const t = tgt != null ? tgt : 5;
+    legend.innerHTML = `${sw(GOOD)} ≤${t} days &nbsp; ${sw(BAD)} &gt;${t}` + nd;
   } else if (metric === 'quality') {
-    legend.innerHTML = `${sw(GOOD)} ≥95% &nbsp; ${sw(BAD)} &lt;95` + nd;
+    const t = tgt != null ? tgt : 95;
+    legend.innerHTML = `${sw(GOOD)} ≥${t}% &nbsp; ${sw(BAD)} &lt;${t}` + nd;
   } else if (metric === 'remake') {
-    legend.innerHTML = `${sw(GOOD)} ≤5% &nbsp; ${sw(BAD)} &gt;5` + nd;
+    const t = tgt != null ? tgt : 5;
+    legend.innerHTML = `${sw(GOOD)} ≤${t}% &nbsp; ${sw(BAD)} &gt;${t}` + nd;
   } else { // otd
-    legend.innerHTML = `${sw(GOOD)} ≥92% &nbsp; ${sw(BAD)} &lt;92` + nd;
+    const t = tgt != null ? tgt : 92;
+    legend.innerHTML = `${sw(GOOD)} ≥${t}% &nbsp; ${sw(BAD)} &lt;${t}` + nd;
   }
 }
 
