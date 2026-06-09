@@ -482,6 +482,32 @@ textarea.form-input{min-height:80px;resize:vertical}
 }
 .otd-target.set { color:var(--spectrum-blue); }
 .otd-target.unset { color:#9ca3af; font-style:italic; font-weight:500; }
+
+/* ══ PERFORMANCE TRENDS TAB ══ */
+/* Section heading above a group of cards */
+.pt-section-hd { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--spectrum-blue); margin:4px 2px 12px; }
+/* Responsive trend-graph grid: 4 across → 2×2 → 1 per line */
+.pt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+@media (max-width:1300px){ .pt-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:680px) { .pt-grid { grid-template-columns:1fr; } }
+.pt-chart-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); padding:14px 16px; border-top:3px solid var(--killian-blue); display:flex; flex-direction:column; }
+.pt-chart-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:2px; }
+.pt-chart-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.pt-chart-now { font-size:20px; font-weight:800; color:var(--spectrum-blue); line-height:1; white-space:nowrap; }
+.pt-chart-sub { font-size:10px; font-weight:600; color:#9ca3af; margin-bottom:8px; }
+.pt-chart-svg { width:100%; height:auto; display:block; overflow:visible; }
+.pt-empty { text-align:center; padding:34px 10px; color:var(--muted); font-size:13px; }
+/* Revenue-composition donut (only when All is selected) */
+.pt-donut-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; margin-bottom:20px; }
+.pt-donut-card .otd-summary-hd { padding:12px 16px; background:var(--spectrum-blue); color:var(--white); font-size:13px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+.pt-donut-wrap { display:flex; gap:30px; align-items:center; flex-wrap:wrap; padding:18px; justify-content:center; }
+.pt-donut-svg { flex:0 0 auto; }
+.pt-donut-legend { flex:1 1 260px; min-width:240px; display:flex; flex-direction:column; gap:7px; }
+.pt-leg-row { display:flex; align-items:center; gap:10px; font-size:13px; }
+.pt-leg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; }
+.pt-leg-name { font-weight:600; color:var(--spectrum-blue); flex:1 1 auto; }
+.pt-leg-val { font-weight:700; color:var(--killian-blue); white-space:nowrap; }
+.pt-leg-pct { color:var(--muted); font-weight:600; width:52px; text-align:right; white-space:nowrap; }
 /* Analog/Digital supplementary split (non-standard; shown only on split tabs) */
 .otd-ad { font-size:11px; font-weight:600; color:var(--muted); margin-top:5px; line-height:1.35; }
 .otd-ad .ad-k { color:var(--killian-blue); }
@@ -1063,6 +1089,7 @@ textarea.form-input{min-height:80px;resize:vertical}
 
 <!-- NAV TABS -->
 <nav class="nav-tabs">
+  <div class="nav-tab" data-tab="trends"  onclick="setTab(&#39;trends&#39;,this)">Performance Trends</div>
   <div class="nav-tab active" data-tab="otd"     onclick="setTab(&#39;otd&#39;,this)">Business Unit Health</div>
   <div class="nav-tab" data-tab="improvement" onclick="setTab(&#39;improvement&#39;,this)">Business Unit Improvement Actions</div>
   <div class="nav-tab" data-tab="owners"  onclick="setTab(&#39;owners&#39;,this)">Metric Owners</div>
@@ -2460,6 +2487,79 @@ textarea.form-input{min-height:80px;resize:vertical}
 </div>
 
 <!-- OTD TRACKER VIEW -->
+<!-- PERFORMANCE TRENDS VIEW -->
+<div class="view" id="view-trends">
+
+  <div class="otd-hero">
+    <div><div class="otd-hero-title" id="pt-hero-title">FULL ARCH OPERATIONS</div><div class="otd-hero-name" id="pt-hero-name">Full Arch Performance Trends</div></div>
+    <div class="otd-date-nav">
+      <div class="range-segmented" role="tablist" aria-label="Date range">
+        <button class="range-btn active" data-range="day"     onclick="setRange(&#39;day&#39;)">Day</button>
+        <button class="range-btn"        data-range="week"    onclick="setRange(&#39;week&#39;)">Week</button>
+        <button class="range-btn"        data-range="month"   onclick="setRange(&#39;month&#39;)">Month</button>
+        <button class="range-btn"        data-range="quarter" onclick="setRange(&#39;quarter&#39;)">Quarter</button>
+        <button class="range-btn"        data-range="year"    onclick="setRange(&#39;year&#39;)">Year</button>
+      </div>
+      <button class="otd-date-btn" onclick="otdNav(-1)">‹</button>
+      <div class="otd-date-lbl" id="pt-lbl">—</div>
+      <button class="otd-date-btn" onclick="otdNav(+1)">›</button>
+      <input type="date" id="pt-pick" onchange="ptPick()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 9px;color:var(--white);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+    </div>
+  </div>
+
+  <!-- Business Unit Scorecard (mirrors the Health tab, own ids) -->
+  <div class="otd-summary-card" data-collapse-key="pt-kpi">
+    <div class="otd-summary-hd" style="background:#1882C7" onclick="toggleCollapse(&#39;pt-kpi&#39;)">
+      <span>Business Unit Scorecard</span>
+      <span class="collapse-chevron">▼</span>
+    </div>
+    <div class="collapse-body" style="padding:14px">
+      <div class="otd-grid">
+        <div class="otd-kpi"><div class="otd-kval" id="pt-h-revenue">—</div><div class="otd-klbl">Revenue</div><div class="otd-target" id="pt-target-revenue">Target: —</div><div class="trend-badge" id="pt-trend-revenue" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="pt-h-otd">—</div><div class="otd-klbl">On Time Delivery</div><div class="otd-target" id="pt-target-otd">Target: —</div><div class="trend-badge" id="pt-trend-otd" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="pt-h-quality">—</div><div class="otd-klbl">Quality</div><div class="otd-target" id="pt-target-quality">Target: —</div><div class="trend-badge" id="pt-trend-quality" style="display:none"></div></div>
+        <div class="otd-kpi"><div class="otd-kval" id="pt-h-tat">—</div><div class="otd-klbl">Turn Around Time</div><div class="otd-target" id="pt-target-tat">Target: —</div><div class="trend-badge" id="pt-trend-tat" style="display:none"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue by Business Unit donut — only shown when "All" is selected -->
+  <div class="pt-donut-card" id="pt-donut-card" style="display:none">
+    <div class="otd-summary-hd">
+      <span>Revenue by Business Unit</span>
+      <span id="pt-donut-total" style="font-weight:600;opacity:.85">—</span>
+    </div>
+    <div class="pt-donut-wrap">
+      <div class="pt-donut-svg" id="pt-donut-svg"></div>
+      <div class="pt-donut-legend" id="pt-donut-legend"></div>
+    </div>
+  </div>
+
+  <div class="pt-section-hd">Trend vs Target</div>
+  <div class="pt-grid">
+    <div class="pt-chart-card">
+      <div class="pt-chart-hd"><div class="pt-chart-title">Revenue</div><div class="pt-chart-now" id="pt-now-revenue">—</div></div>
+      <div class="pt-chart-sub" id="pt-sub-revenue">—</div>
+      <div id="pt-chart-revenue"></div>
+    </div>
+    <div class="pt-chart-card">
+      <div class="pt-chart-hd"><div class="pt-chart-title">On Time Delivery</div><div class="pt-chart-now" id="pt-now-otd">—</div></div>
+      <div class="pt-chart-sub" id="pt-sub-otd">—</div>
+      <div id="pt-chart-otd"></div>
+    </div>
+    <div class="pt-chart-card">
+      <div class="pt-chart-hd"><div class="pt-chart-title">Quality</div><div class="pt-chart-now" id="pt-now-quality">—</div></div>
+      <div class="pt-chart-sub" id="pt-sub-quality">—</div>
+      <div id="pt-chart-quality"></div>
+    </div>
+    <div class="pt-chart-card">
+      <div class="pt-chart-hd"><div class="pt-chart-title">Avg Turn Around Time</div><div class="pt-chart-now" id="pt-now-tat">—</div></div>
+      <div class="pt-chart-sub" id="pt-sub-tat">—</div>
+      <div id="pt-chart-tat"></div>
+    </div>
+  </div>
+</div>
+
 <div class="view active" id="view-otd">
 
   <div class="otd-hero">
@@ -2769,6 +2869,7 @@ function setTab(name, el){
   } else {
     // Standard top-level tab — show that view directly
     document.getElementById('view-' + name)?.classList.add('active');
+    if (name === 'trends')  initTrends();
     if (name === 'otd')     initOTD();
     if (name === 'owners')  initOwners();
     if (name === 'targets') initTargets();
@@ -3881,6 +3982,8 @@ function updateRangeLabel() {
       lblEl.textContent = String(d.getFullYear());
       break;
   }
+  const _ptLbl = document.getElementById('pt-lbl');
+  if (_ptLbl) _ptLbl.textContent = lblEl.textContent;
 }
 
 function setRange(range) {
@@ -3894,6 +3997,7 @@ function setRange(range) {
   _heatCache = { bu: null, data: null, loadedAt: 0 };
   loadOTD();
   loadBUHealth();
+  if (typeof trendsInited !== 'undefined' && trendsInited) loadTrends();
   // If the heat map is currently visible, re-render
   const pop = document.getElementById('bu-heatmap');
   if (pop && pop.classList.contains('show') && pop.dataset.metric) {
@@ -3927,15 +4031,19 @@ function otdNav(delta) {
   }
   otdDate = toISO(d);
   document.getElementById('otd-pick').value = otdDate;
+  const _ptp = document.getElementById('pt-pick'); if (_ptp) _ptp.value = otdDate;
   updateRangeLabel();
   loadOTD();
   loadBUHealth();
+  if (typeof trendsInited !== 'undefined' && trendsInited) loadTrends();
 }
 function otdPick() {
   otdDate = document.getElementById('otd-pick').value;
+  const _ptp = document.getElementById('pt-pick'); if (_ptp) _ptp.value = otdDate;
   updateRangeLabel();
   loadOTD();
   loadBUHealth();
+  if (typeof trendsInited !== 'undefined' && trendsInited) loadTrends();
 }
 
 async function loadOTD() {
@@ -4205,6 +4313,10 @@ function setBU(bu){
     buildOTDCards();
     Promise.all([loadOwners(), loadTargets()]).then(() => loadOTD());
     loadBUHealth();
+  }
+  // Refresh the Performance Trends tab for the new BU (toggles the donut on/off too)
+  if (typeof trendsInited !== 'undefined' && trendsInited) {
+    loadTrends();
   }
   // Refresh Metric Owners table if that tab is currently initialized
   if (typeof ownersInited !== 'undefined' && ownersInited) {
@@ -5102,6 +5214,275 @@ function pickTextColor(hex) {
   const r = parseInt(full.substr(0,2),16), g = parseInt(full.substr(2,2),16), b = parseInt(full.substr(4,2),16);
   const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
   return lum > 0.62 ? '#1f2937' : '#fff';
+}
+
+/* ════════════════════════════════════════════
+   PERFORMANCE TRENDS TAB
+   Reuses the BU-health data layer: fetchBUMetrics (scorecard),
+   loadHeatData + heatBucketize (time series), METRIC_DEFS (value/format),
+   buTargetFor (target line). Charts are dependency-free inline SVG.
+════════════════════════════════════════════ */
+let trendsInited = false;
+const PT_METRICS = [
+  { key:'revenue', label:'Revenue',              higher:true  },
+  { key:'otd',     label:'On Time Delivery',     higher:true  },
+  { key:'quality', label:'Quality',              higher:true  },
+  { key:'tat',     label:'Avg Turn Around Time', higher:false }
+];
+// On-brand, visually distinct palette for the revenue-composition donut.
+const PT_BU_COLORS = ['#1882C7','#052030','#B3A369','#6FB7E0','#0a3a5c','#9b8f54','#C3E8FA','#3d5a73','#d9c98a','#7a93a8'];
+
+function ptRangeWord() {
+  return ({ day:'Last 30 days', week:'Last 4 weeks', month:'Last 12 months',
+            quarter:'Last 4 quarters', year:'Last 3 years' })[otdRange] || '';
+}
+function ptMmdd(iso) { const p = String(iso).split('-'); return p.length === 3 ? (+p[1]) + '/' + (+p[2]) : iso; }
+function ptKfmt(v) { return v >= 1000 ? Math.round(v/1000).toLocaleString() + 'K' : Math.round(v).toLocaleString(); }
+function ptEsc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function ptUpdateBanner() {
+  const label = BU_LABELS[currentBU] || 'Full Arch';
+  const t = document.getElementById('pt-hero-title'); if (t) t.textContent = label.toUpperCase() + ' OPERATIONS';
+  const n = document.getElementById('pt-hero-name');  if (n) n.textContent = label + ' Performance Trends';
+}
+function ptSyncDateControls() {
+  const pick = document.getElementById('pt-pick'); if (pick) pick.value = otdDate;
+  const lbl  = document.getElementById('pt-lbl'), src = document.getElementById('otd-lbl');
+  if (lbl && src && src.textContent && src.textContent !== '—') lbl.textContent = src.textContent;
+}
+// Date picker on the Trends hero (mirrors otdPick, keeps both tabs in sync)
+function ptPick() {
+  const v = document.getElementById('pt-pick').value;
+  if (v) otdDate = v;
+  const op = document.getElementById('otd-pick'); if (op) op.value = otdDate;
+  updateRangeLabel();
+  loadOTD(); loadBUHealth();
+  loadTrends();
+}
+
+async function initTrends() {
+  if (!trendsInited) trendsInited = true;
+  updateRangeLabel();        // patched to also refresh #pt-lbl
+  ptSyncDateControls();
+  await loadTrends();
+}
+
+async function loadTrends() {
+  if (!otdDate) return;
+  ptUpdateBanner();
+  ptSyncDateControls();
+  PT_METRICS.forEach(m => {
+    const el = document.getElementById('pt-h-' + m.key); if (el) el.textContent = '…';
+    const tr = document.getElementById('pt-trend-' + m.key); if (tr) tr.style.display = 'none';
+  });
+  const { start, end } = getRangeBounds(otdDate, otdRange);
+  try {
+    const [metrics, daily] = await Promise.all([
+      fetchBUMetrics(start, end),
+      loadHeatData(),
+      loadBUTargets()
+    ]);
+    ptRenderScorecard(metrics);
+    const buckets = heatBucketize(daily, otdRange) || [];
+    PT_METRICS.forEach(m => ptRenderChart(m, buckets));
+    // Revenue composition donut only for the whole-lab "All" view
+    const card = document.getElementById('pt-donut-card');
+    if (currentBU === 'all') {
+      if (card) card.style.display = '';
+      ptLoadComposition(start, end);
+    } else if (card) {
+      card.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Trends load failed', e);
+    PT_METRICS.forEach(m => { const el = document.getElementById('pt-h-' + m.key); if (el) el.textContent = '—'; });
+  }
+}
+
+// Trend badge (vs target) for the Trends-tab scorecard tiles.
+function ptTrendBadge(metricKey, cur, target, higherIsBetter) {
+  const el = document.getElementById('pt-trend-' + metricKey);
+  if (!el) return;
+  if (cur == null || target == null || target === 0) { el.style.display = 'none'; return; }
+  const pctChange = (cur - target) / Math.abs(target) * 100;
+  const isUp = pctChange > 0.5, isDown = pctChange < -0.5;
+  const arrow = isUp ? '▲' : isDown ? '▼' : '►';
+  const isGood = (higherIsBetter && isUp) || (!higherIsBetter && isDown);
+  const isBad  = (higherIsBetter && isDown) || (!higherIsBetter && isUp);
+  el.className = 'trend-badge ' + (isGood ? 'good' : isBad ? 'bad' : 'flat');
+  el.textContent = arrow + ' ' + Math.round(Math.abs(pctChange)) + '%';
+  el.style.display = '';
+  el.title = isGood ? 'On / above target' : isBad ? 'Below target' : 'At target';
+}
+
+function ptRenderScorecard(m) {
+  const g = id => document.getElementById(id);
+  const range = otdRange;
+  if (g('pt-h-revenue')) g('pt-h-revenue').textContent = m.revenue > 0 ? '$' + Math.round(m.revenue).toLocaleString() : '—';
+  if (g('pt-h-otd')) {
+    g('pt-h-otd').textContent = m.otdPct != null ? m.otdPct.toFixed(1) + '%' : '—';
+    g('pt-h-otd').style.color = m.otdPct == null ? '' : thresholdColor('otd', m.otdPct, buTargetFor('otd', range));
+  }
+  if (g('pt-h-quality')) {
+    g('pt-h-quality').textContent = m.qualityPct != null ? m.qualityPct.toFixed(1) + '%' : '—';
+    g('pt-h-quality').style.color = m.qualityPct == null ? KPI_GOOD : thresholdColor('quality', m.qualityPct, buTargetFor('quality', range));
+  }
+  if (g('pt-h-tat')) {
+    g('pt-h-tat').textContent = m.tatAvg != null ? m.tatAvg.toFixed(1) + ' days' : '—';
+    g('pt-h-tat').style.color = m.tatAvg == null ? '' : thresholdColor('tat', m.tatAvg, buTargetFor('tat', range));
+  }
+  const tgt = { revenue: buTargetFor('revenue', range), otd: buTargetFor('otd', range),
+                quality: buTargetFor('quality', range), tat: buTargetFor('tat', range) };
+  const setT = (id, value, metric) => {
+    const el = g(id); if (!el) return;
+    if (value == null) { el.textContent = 'Target: not set'; el.classList.remove('set'); el.classList.add('unset'); }
+    else { el.textContent = 'Target: ' + formatTargetValue(metric, value); el.classList.add('set'); el.classList.remove('unset'); }
+  };
+  setT('pt-target-revenue', tgt.revenue, 'revenue');
+  setT('pt-target-otd',     tgt.otd,     'otd');
+  setT('pt-target-quality', tgt.quality, 'quality');
+  setT('pt-target-tat',     tgt.tat,     'tat');
+  ptTrendBadge('revenue', m.revenue > 0 ? m.revenue : null, tgt.revenue, true);
+  ptTrendBadge('otd',     m.otdPct,     tgt.otd,     true);
+  ptTrendBadge('quality', m.qualityPct, tgt.quality, true);
+  ptTrendBadge('tat',     m.tatAvg,     tgt.tat,     false);
+}
+
+// Inline-SVG line chart of one metric over the bucketed time window, with a
+// dashed target reference line. Points are colored good/bad vs target.
+function ptRenderChart(m, buckets) {
+  const host  = document.getElementById('pt-chart-' + m.key);
+  const nowEl = document.getElementById('pt-now-' + m.key);
+  const subEl = document.getElementById('pt-sub-' + m.key);
+  if (!host) return;
+  const def = METRIC_DEFS[m.key];
+  const target = buTargetFor(m.key, otdRange);
+  const pts = (buckets || []).map(b => ({ v: def.valueFn(b), label: b.label || ptMmdd(b.day) }));
+  const vals = pts.map(p => p.v).filter(v => v != null && !isNaN(v));
+
+  let cur = null;
+  for (let i = pts.length - 1; i >= 0; i--) { if (pts[i].v != null && !isNaN(pts[i].v)) { cur = pts[i].v; break; } }
+  if (nowEl) nowEl.textContent = cur == null ? '—' : def.fmtFull(cur);
+  if (subEl) subEl.textContent = (target != null ? 'Target ' + formatTargetValue(m.key, target) + ' · ' : '') + ptRangeWord();
+
+  if (vals.length === 0) { host.innerHTML = '<div class="pt-empty">No data for this period.</div>'; return; }
+
+  const W = 340, H = 168, mL = 8, mR = 12, mT = 22, mB = 22;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (target != null && !isNaN(target)) { lo = Math.min(lo, target); hi = Math.max(hi, target); }
+  if (m.key === 'revenue') lo = Math.min(lo, 0);
+  if (lo === hi) { const base = Math.abs(lo) || 1; hi = lo + base; lo = lo - base * 0.5; }
+  const pad = (hi - lo) * 0.12; hi += pad; lo -= pad;
+  if (m.key === 'revenue' && lo < 0) lo = 0;
+
+  const n = pts.length;
+  const xFor = i => mL + (n <= 1 ? plotW / 2 : plotW * i / (n - 1));
+  const yFor = v => mT + plotH * (1 - (v - lo) / (hi - lo));
+  const blue = '#1882C7';
+  let svg = '<svg class="pt-chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + ptEsc(m.label) + ' trend">';
+
+  // Target reference line
+  if (target != null && !isNaN(target) && target >= lo && target <= hi) {
+    const ty = yFor(target).toFixed(1);
+    svg += '<line x1="' + mL + '" y1="' + ty + '" x2="' + (mL + plotW) + '" y2="' + ty + '" stroke="#B3A369" stroke-width="1.5" stroke-dasharray="5 4"/>';
+    svg += '<text x="' + (mL + plotW) + '" y="' + (ty - 4) + '" text-anchor="end" font-size="9" font-weight="700" fill="#9b8f54">TARGET</text>';
+  }
+
+  // Line + soft area, broken across null gaps
+  const coords = pts.map((p, i) => (p.v == null || isNaN(p.v)) ? null : { x: xFor(i), y: yFor(p.v) });
+  const areaBase = (mT + plotH).toFixed(1);
+  const drawRun = (a, b) => {
+    const seg = [];
+    for (let i = a; i <= b; i++) seg.push((i === a ? 'M' : 'L') + coords[i].x.toFixed(1) + ' ' + coords[i].y.toFixed(1));
+    let s = '';
+    if (b > a) s += '<path d="' + seg.join(' ') + ' L' + coords[b].x.toFixed(1) + ' ' + areaBase + ' L' + coords[a].x.toFixed(1) + ' ' + areaBase + ' Z" fill="' + blue + '" fill-opacity="0.07"/>';
+    s += '<path d="' + seg.join(' ') + '" fill="none" stroke="' + blue + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    return s;
+  };
+  let runStart = -1;
+  for (let i = 0; i <= n; i++) {
+    if (i < n && coords[i]) { if (runStart < 0) runStart = i; }
+    else if (runStart >= 0) { svg += drawRun(runStart, i - 1); runStart = -1; }
+  }
+
+  // Points (+ value labels when few enough)
+  const showLabels = n <= 8;
+  pts.forEach((p, i) => {
+    if (p.v == null || isNaN(p.v)) return;
+    const c = coords[i];
+    let col = blue;
+    if (m.key === 'otd' || m.key === 'quality' || m.key === 'tat') col = thresholdColor(m.key, p.v, target);
+    svg += '<circle cx="' + c.x.toFixed(1) + '" cy="' + c.y.toFixed(1) + '" r="3" fill="' + col + '" stroke="#fff" stroke-width="1"/>';
+    if (showLabels) {
+      const txt = m.key === 'revenue' ? def.fmtCell(p.v) : def.fmtFull(p.v);
+      svg += '<text x="' + c.x.toFixed(1) + '" y="' + (c.y - 7).toFixed(1) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="#052030">' + txt + '</text>';
+    }
+  });
+
+  // X-axis labels (sparse when many buckets)
+  const step = n <= 12 ? 1 : Math.ceil(n / 8);
+  pts.forEach((p, i) => {
+    if (i % step !== 0 && i !== n - 1) return;
+    svg += '<text x="' + xFor(i).toFixed(1) + '" y="' + (H - 7) + '" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5a7089">' + ptEsc(p.label) + '</text>';
+  });
+
+  svg += '</svg>';
+  host.innerHTML = svg;
+}
+
+// Revenue composition donut (whole-lab "All" only): share of total revenue per L2 BU.
+async function ptLoadComposition(start, end) {
+  const svgEl = document.getElementById('pt-donut-svg');
+  const legEl = document.getElementById('pt-donut-legend');
+  const totEl = document.getElementById('pt-donut-total');
+  if (svgEl) svgEl.innerHTML = '<div class="pt-empty" style="width:220px">Loading…</div>';
+  if (legEl) legEl.innerHTML = '';
+  try {
+    const rows = await sbFetch(`daily_revenue_by_bu_l2?report_date=gte.${start}&report_date=lte.${end}&limit=10000`);
+    const sums = {};
+    (rows || []).forEach(r => {
+      const bu = (r.business_unit_l2 || '').trim();
+      if (!bu) return;
+      sums[bu] = (sums[bu] || 0) + (parseFloat(r.revenue) || 0);
+    });
+    const segs = Object.keys(sums).map(k => ({ name: k, value: sums[k] }))
+      .filter(s => s.value > 0).sort((a, b) => b.value - a.value);
+    const total = segs.reduce((s, x) => s + x.value, 0);
+    if (totEl) totEl.textContent = total > 0 ? '$' + Math.round(total).toLocaleString() + ' total' : '—';
+    if (total <= 0 || segs.length === 0) { if (svgEl) svgEl.innerHTML = '<div class="pt-empty" style="width:220px">No revenue this period.</div>'; return; }
+    ptRenderDonut(svgEl, legEl, segs, total);
+  } catch (e) {
+    console.error('Composition load failed', e);
+    if (svgEl) svgEl.innerHTML = '<div class="pt-empty" style="width:220px">Couldn’t load composition.</div>';
+  }
+}
+
+function ptRenderDonut(svgEl, legEl, segs, total) {
+  const size = 220, cx = size / 2, cy = size / 2, r = 78, sw = 34;
+  const C = 2 * Math.PI * r;
+  let acc = 0, ring = '';
+  segs.forEach((s, i) => {
+    const frac = s.value / total;
+    s._col = PT_BU_COLORS[i % PT_BU_COLORS.length];
+    s._pct = frac * 100;
+    const dash = frac * C;
+    ring += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + s._col + '" stroke-width="' + sw
+          + '" stroke-dasharray="' + dash.toFixed(2) + ' ' + (C - dash).toFixed(2) + '" stroke-dashoffset="' + (-acc * C).toFixed(2)
+          + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"></circle>';
+    acc += frac;
+  });
+  svgEl.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="Revenue by business unit">'
+    + ring
+    + '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#5a7089">Total</text>'
+    + '<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" font-size="17" font-weight="800" fill="#052030">$' + ptKfmt(total) + '</text>'
+    + '</svg>';
+  legEl.innerHTML = segs.map(s =>
+    '<div class="pt-leg-row"><span class="pt-leg-sw" style="background:' + s._col + '"></span>'
+    + '<span class="pt-leg-name">' + ptEsc(s.name) + '</span>'
+    + '<span class="pt-leg-val">$' + Math.round(s.value).toLocaleString() + '</span>'
+    + '<span class="pt-leg-pct">' + s._pct.toFixed(1) + '%</span></div>'
+  ).join('');
 }
 
 async function loadHeatData() {
