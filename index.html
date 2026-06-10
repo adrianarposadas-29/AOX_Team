@@ -534,9 +534,9 @@ textarea.form-input{min-height:80px;resize:vertical}
 /* ══ PERFORMANCE TRENDS TAB ══ */
 /* Section heading above a group of cards */
 .pt-section-hd { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--spectrum-blue); margin:4px 2px 12px; }
-/* Responsive trend-graph grid: 4 across → 2×2 → 1 per line */
+/* Responsive trend-graph grid: 4 across (keeps single row on laptop/TV widths) → 2×2 → 1 per line */
 .pt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
-@media (max-width:1300px){ .pt-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:900px) { .pt-grid { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:680px) { .pt-grid { grid-template-columns:1fr; } }
 .pt-chart-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); padding:14px 16px; border-top:3px solid var(--killian-blue); display:flex; flex-direction:column; }
 .pt-chart-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:2px; }
@@ -2591,18 +2591,6 @@ textarea.form-input{min-height:80px;resize:vertical}
     </div>
   </div>
 
-  <!-- Revenue by Business Unit donut - only shown when "All" is selected -->
-  <div class="pt-donut-card" id="pt-donut-card" style="display:none">
-    <div class="otd-summary-hd">
-      <span>Revenue by Business Unit</span>
-      <span id="pt-donut-total" style="font-weight:600;opacity:.85">-</span>
-    </div>
-    <div class="pt-donut-wrap">
-      <div class="pt-donut-svg" id="pt-donut-svg"></div>
-      <div class="pt-donut-legend" id="pt-donut-legend"></div>
-    </div>
-  </div>
-
   <div class="pt-section-hd">Trend vs Target</div>
   <div class="pt-grid">
     <div class="pt-chart-card">
@@ -2624,6 +2612,18 @@ textarea.form-input{min-height:80px;resize:vertical}
       <div class="pt-chart-hd"><div class="pt-chart-title">Avg Turn Around Time</div><div class="pt-chart-now" id="pt-now-tat">-</div></div>
       <div class="pt-chart-sub" id="pt-sub-tat">-</div>
       <div id="pt-chart-tat"></div>
+    </div>
+  </div>
+
+  <!-- Revenue by Business Unit donut - only shown when "All" is selected -->
+  <div class="pt-donut-card" id="pt-donut-card" style="display:none">
+    <div class="otd-summary-hd">
+      <span>Revenue by Business Unit</span>
+      <span id="pt-donut-total" style="font-weight:600;opacity:.85">-</span>
+    </div>
+    <div class="pt-donut-wrap">
+      <div class="pt-donut-svg" id="pt-donut-svg"></div>
+      <div class="pt-donut-legend" id="pt-donut-legend"></div>
     </div>
   </div>
 </div>
