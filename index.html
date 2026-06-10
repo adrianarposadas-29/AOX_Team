@@ -645,6 +645,13 @@ textarea.form-input{min-height:80px;resize:vertical}
 .owners-inp { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; color:var(--ink); background:#fff; transition:border-color .15s, box-shadow .15s; }
 .owners-inp:focus { outline:none; border-color:var(--killian-blue); box-shadow:0 0 0 3px rgba(24,130,199,.12); }
 .owners-inp.saved { background:#ecfdf5; border-color:#86efac; }
+/* Per-station counting basis shown in the Target column (cases/pans/units per day) */
+.target-cell { display:flex; align-items:center; gap:10px; }
+.target-cell .owners-inp { flex:1 1 auto; }
+.target-basis { flex:0 0 auto; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); white-space:nowrap; }
+.target-basis.cases { color:#1882c7; }
+.target-basis.pans  { color:#9333ea; }
+.target-basis.units { color:#0f9d6b; }
 
 /* ── Targets-tab toggle (Operations vs Business Unit) ── */
 .targets-toggle {
@@ -2756,7 +2763,7 @@ textarea.form-input{min-height:80px;resize:vertical}
       <div class="owners-card-sub">Set a daily target (units) for each operation. These values appear in the Target column of the OTD Daily Summary, and stay in place day-to-day until you change them here.</div>
       <div style="overflow-x:auto">
         <table class="owners-table">
-          <thead><tr><th>Operation</th><th style="width:50%">Target (units / day)</th></tr></thead>
+          <thead><tr><th>Operation</th><th style="width:50%" id="targets-target-th">Target (units / day)</th></tr></thead>
           <tbody id="targets-tbl"></tbody>
         </table>
       </div>
@@ -4676,11 +4683,41 @@ async function loadTargets() {
   } catch(e) { console.error('Targets load', e); targetsData = {}; }
 }
 
+// Per-station counting basis (cases / pans / units) for the BUs where the
+// daily target unit varies by station. Sourced from the Department Health
+// station_step_map: distinct_case → cases, distinct_pan → pans, sum → units.
+// When a BU appears here, the Target column header drops its "(units / day)"
+// note and each row labels its own basis instead.
+const TARGET_BASIS_BY_BU = {
+  'crown-bridge': {
+    "Data Entry": "cases", "Case Review": "pans", "Implant Case Review": "pans",
+    "Scan": "pans", "Import Digital Impression": "cases", "Design": "pans",
+    "Print": "units", "Milling": "units", "Nest": "units", "Sinter": "units",
+    "Model Room": "units", "Wax & Metal": "units", "Stain & Glaze": "units",
+    "Anodize Abutment / Cement": "pans", "Final QC - Implant": "pans",
+    "Invoicing & Shipping": "units"
+  },
+  'analog-dentures': {
+    "Case Review": "pans", "Design": "pans", "Pour Trim Mount": "units",
+    "Outsource Out": "pans", "Outsource In": "pans", "Final QC": "units"
+  },
+  'digital-product': {
+    "Data Entry": "cases", "Nest": "units", "Print": "units", "Cleaning": "units",
+    "Fuse Oven": "units", "Fuse 2": "units", "Fuse 3": "units", "Teeth Fit": "units",
+    "Polish Cure": "units", "Patient Name & Stain": "units", "Regal Protect": "units",
+    "Final QC": "units"
+  }
+};
+
 function buildTargetsTable() {
   const tb = document.getElementById('targets-tbl');
   if (!tb) return;
   const lbl = document.getElementById('targets-bu-lbl');
   if (lbl) lbl.textContent = BU_OPS_LABEL[currentBU] || 'OPERATIONS';
+  const basisMap = TARGET_BASIS_BY_BU[currentBU] || null;
+  // Header: drop the "(units / day)" note for BUs that label basis per row.
+  const th = document.getElementById('targets-target-th');
+  if (th) th.textContent = basisMap ? 'Target' : 'Target (units / day)';
   const ops = currentOps();
   if (ops.length === 0) {
     tb.innerHTML = `<tr><td colspan="2" style="text-align:center;padding:30px;color:var(--muted);font-style:italic">No operations configured for this business unit yet.</td></tr>`;
@@ -4689,9 +4726,13 @@ function buildTargetsTable() {
   tb.innerHTML = ops.map(op => {
     const cur = targetsData[op]?.target_value;
     const safeOp = op.replace(/'/g, "\\'");
+    const basis = basisMap ? (basisMap[op] || 'units') : null;
+    const basisHtml = basis
+      ? `<span class="target-basis ${basis}">${basis} / day</span>`
+      : '';
     return `<tr>
       <td>${esc(op)}</td>
-      <td><input class="owners-inp" type="number" min="0" value="${cur ?? ''}" placeholder="e.g., 50" onchange="saveTarget('${safeOp}', this)"></td>
+      <td><div class="target-cell"><input class="owners-inp" type="number" min="0" value="${cur ?? ''}" placeholder="e.g., 50" onchange="saveTarget('${safeOp}', this)">${basisHtml}</div></td>
     </tr>`;
   }).join('');
 }
