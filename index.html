@@ -653,6 +653,11 @@ textarea.form-input{min-height:80px;resize:vertical}
 .target-basis.pans  { color:#9333ea; }
 .target-basis.units { color:#0f9d6b; }
 
+/* Counting-basis label shown beside the target number in the Business Unit
+   Health summary tables (Prior Day / Current Day). Dark gray, smaller than the
+   number, and not uppercased. */
+.otd-target-basis { font-size:9px; font-weight:500; text-transform:none; letter-spacing:.02em; color:#4b5563; white-space:nowrap; }
+
 /* ── Targets-tab toggle (Operations vs Business Unit) ── */
 .targets-toggle {
   display:inline-flex;
@@ -2679,7 +2684,7 @@ textarea.form-input{min-height:80px;resize:vertical}
         <thead><tr>
           <th>Operation</th>
           <th>Metric Owner</th>
-          <th>Target</th>
+          <th style="text-align:center">Target</th>
           <th>Planned</th>
           <th>Actual</th>
           <th>Late</th>
@@ -2705,7 +2710,7 @@ textarea.form-input{min-height:80px;resize:vertical}
         <thead><tr>
           <th>Operation</th>
           <th>Metric Owner</th>
-          <th>Target</th>
+          <th style="text-align:center">Target</th>
           <th>Today's Plan</th>
           <th>Expected Output</th>
           <th>Support / Actions Needed</th>
@@ -4264,6 +4269,16 @@ function renderOTDTable() {
   renderCurrentDayPlan();
 }
 
+// Renders a Target-column cell: the number plus its counting basis
+// (units / pans / cases per day), centered. Basis is per-operation for the
+// BUs in TARGET_BASIS_BY_BU and defaults to "units" everywhere else.
+function otdTargetCell(op, tgt) {
+  if (tgt == null) return '-';
+  const basisMap = TARGET_BASIS_BY_BU[currentBU] || null;
+  const basis = basisMap ? (basisMap[op] || 'units') : 'units';
+  return `<span class="otd-target-val">${tgt}</span> <span class="otd-target-basis">${basis} / day</span>`;
+}
+
 function renderPriorDaySummary() {
   const tb = document.getElementById('otd-tbl-prior');
   if (!tb) return;
@@ -4282,7 +4297,7 @@ function renderPriorDaySummary() {
     return `<tr>
       <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(op)}</td>
       <td style="font-size:12px">${esc(owner)}</td>
-      <td style="text-align:center;font-weight:600;color:var(--killian-blue)">${tgt != null ? tgt : '-'}</td>
+      <td style="text-align:center;font-weight:600;color:var(--killian-blue)">${otdTargetCell(op, tgt)}</td>
       <td style="text-align:center">${pln ?? '-'}</td>
       <td style="text-align:center">${act ?? '-'}</td>
       <td style="text-align:center;color:${lat>0?'#dc2626':'var(--muted)'};font-weight:${lat>0?700:400}">${lat}</td>
@@ -4308,7 +4323,7 @@ function renderCurrentDayPlan() {
     return `<tr>
       <td style="font-weight:600;color:var(--spectrum-blue);white-space:nowrap">${esc(op)}</td>
       <td style="font-size:12px">${esc(owner)}</td>
-      <td style="text-align:center;font-weight:600;color:var(--killian-blue)">${tgt != null ? tgt : '-'}</td>
+      <td style="text-align:center;font-weight:600;color:var(--killian-blue)">${otdTargetCell(op, tgt)}</td>
       <td style="text-align:center;font-weight:600">${plan != null ? plan : '-'}</td>
       <td style="text-align:center">${expected ? esc(expected) : '-'}</td>
       <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:240px">${support ? esc(support) : '-'}</td>
