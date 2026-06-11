@@ -3436,20 +3436,33 @@ async function saveWinStatement(){
 }
 
 /* ── LANES ── */
+// Assignments scoped to the Business Unit L2 selected at the top of the page.
+// Uses the same BU -> bus_unit mapping as the Assign To dropdown: under a
+// specific BU only tasks for that BU's employees (incl. eng/op) show; 'All'
+// shows every task.
+function assignmentsForCurrentBU(){
+  const bu = (typeof currentBU !== 'undefined' && currentBU) ? currentBU : 'all';
+  if(!EMP_BU_BY_L2[bu]) return WIN_ASSIGNMENTS;
+  const allowed = new Set(employeesForCurrentBU().map(e=>e.name));
+  return WIN_ASSIGNMENTS.filter(a => allowed.has(a.assignee));
+}
+
 function renderLanes(){
   const container = document.getElementById('dw-lanes');
-  if(!WIN_ASSIGNMENTS.length){
+  const assignments = assignmentsForCurrentBU();
+  if(!assignments.length){
+    const filtered = WIN_ASSIGNMENTS.length && (typeof currentBU !== 'undefined') && EMP_BU_BY_L2[currentBU];
     container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--muted);background:var(--white);border-radius:10px;border:2px dashed var(--border)">
       <div style="font-size:32px;margin-bottom:10px"></div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px">No tasks assigned yet</div>
-      <div style="font-size:13px">Click <strong>+ Assign Task</strong> to build today's plan and define how you win</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">${filtered?'No tasks for this business unit':'No tasks assigned yet'}</div>
+      <div style="font-size:13px">${filtered?'Switch the Business Unit selector or assign a task to someone in this unit':'Click <strong>+ Assign Task</strong> to build today\'s plan and define how you win'}</div>
     </div>`;
     return;
   }
 
   // Group by assignee
   const byEmp = {};
-  WIN_ASSIGNMENTS.forEach(a => {
+  assignments.forEach(a => {
     const k = a.assignee || 'Unassigned';
     if(!byEmp[k]) byEmp[k] = [];
     byEmp[k].push(a);
@@ -3529,10 +3542,11 @@ function priorityOrder(p){ return {Critical:0,High:1,Medium:2,Low:3}[p]??99; }
 
 /* ── SCOREBOARD ── */
 function updateScoreboard(){
-  const total = WIN_ASSIGNMENTS.length;
-  const done = WIN_ASSIGNMENTS.filter(t=>t.status==='Complete').length;
-  const inprog = WIN_ASSIGNMENTS.filter(t=>t.status==='In Progress').length;
-  const blocked = WIN_ASSIGNMENTS.filter(t=>t.status==='Blocked').length;
+  const scoped = assignmentsForCurrentBU();
+  const total = scoped.length;
+  const done = scoped.filter(t=>t.status==='Complete').length;
+  const inprog = scoped.filter(t=>t.status==='In Progress').length;
+  const blocked = scoped.filter(t=>t.status==='Blocked').length;
   const pct = total ? Math.round(done/total*100) : 0;
 
   document.getElementById('sb-complete').textContent = done;
@@ -3578,8 +3592,9 @@ function updateScoreboard(){
 }
 
 function updateWinsCount(){
-  const open = WIN_ASSIGNMENTS.filter(t=>t.status!=='Complete').length;
-  document.getElementById('wins-count').textContent = open || WIN_ASSIGNMENTS.length || '-';
+  const scoped = assignmentsForCurrentBU();
+  const open = scoped.filter(t=>t.status!=='Complete').length;
+  document.getElementById('wins-count').textContent = open || scoped.length || '-';
 }
 
 /* ── CYCLE STATUS ── */
@@ -3602,11 +3617,39 @@ async function cycleTaskStatus(id, e){
 }
 
 /* ── ASSIGN MODAL ── */
-function populateAssigneeSelect(){
+// Maps the Business Unit L2 selected at the top of the page (currentBU) to the
+// employees.bus_unit value(s) that should appear in the Assign To dropdown.
+// eng + op are appended for every BU below, so they show up everywhere.
+const EMP_BU_BY_L2 = {
+  'full-arch':       ['full_arch'],
+  'digital-product': ['removables'],   // Printed Product
+  'analog-dentures': ['removables'],   // Analog Denture
+  'implant':         ['restorative'],
+  'crown-bridge':    ['restorative'],
+};
+
+function employeesForCurrentBU(){
+  const bu = (typeof currentBU !== 'undefined' && currentBU) ? currentBU : 'all';
+  const mapped = EMP_BU_BY_L2[bu];
+  // Employees with no bus_unit are never shown.
+  const tagged = EMPLOYEES.filter(e => (e.bus_unit||'').trim() !== '');
+  // 'all' (or any unmapped BU) shows everyone who has a bus_unit.
+  if(!mapped) return tagged;
+  const allowed = new Set([...mapped, 'eng', 'op']);
+  return tagged.filter(e => allowed.has(e.bus_unit.trim().toLowerCase()));
+}
+
+function populateAssigneeSelect(ensureName){
   const sel = document.getElementById('a-assignee');
   const cur = sel.value;
   sel.innerHTML='<option value="">Select employee…</option>';
-  EMPLOYEES.forEach(e=>{
+  const list = employeesForCurrentBU();
+  // Keep an out-of-BU assignee (e.g. when editing an existing task) selectable.
+  if(ensureName && !list.some(e=>e.name===ensureName)){
+    const extra = EMPLOYEES.find(e=>e.name===ensureName);
+    list.push(extra || {name:ensureName});
+  }
+  list.forEach(e=>{
     const opt = document.createElement('option');
     opt.value = e.name; opt.textContent = e.name+(e.department?' ('+e.department+')':'');
     if(e.name===cur) opt.selected=true;
@@ -3635,6 +3678,7 @@ function openAssignModal(id=null, preAssignee=null){
   if(id){
     const t = WIN_ASSIGNMENTS.find(a=>a.id===id);
     if(t){
+      populateAssigneeSelect(t.assignee||'');  // filter by current BU, keep existing assignee
       document.getElementById('a-title').value = t.task_title||'';
       document.getElementById('a-raid-link').value = t.raid_item_id||'';
       document.getElementById('a-assignee').value = t.assignee||'';
@@ -3645,6 +3689,7 @@ function openAssignModal(id=null, preAssignee=null){
       document.getElementById('a-notes').value = t.task_notes||'';
     }
   } else {
+    populateAssigneeSelect(preAssignee||'');  // filter by current BU
     document.getElementById('a-title').value='';
     document.getElementById('a-raid-link').value='';
     document.getElementById('a-assignee').value = preAssignee||'';
@@ -3679,7 +3724,7 @@ async function saveAssignment(){
     // add to employees table
     await sbFetch('employees','POST',{name:assignee.trim(),department:'',role:'',active:true});
     EMPLOYEES = await sbFetch('employees?active=eq.true&order=name');
-    populateAssigneeSelect();
+    populateAssigneeSelect(assignee.trim());
   }
   if(!assignee){ alert('Please select an employee'); return; }
   const title = document.getElementById('a-title').value.trim();
@@ -4414,6 +4459,12 @@ function setBU(bu){
     populateOwnerFilter();
     renderTable();
     renderMatrix();
+  }
+  // Re-scope the Daily Wins lanes + scoreboard to the new BU
+  if (typeof winsInited !== 'undefined' && winsInited) {
+    renderLanes();
+    updateScoreboard();
+    updateWinsCount();
   }
 }
 /* Custom Business Unit dropdown controller */
