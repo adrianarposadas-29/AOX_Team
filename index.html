@@ -2414,7 +2414,7 @@ textarea.form-input{min-height:80px;resize:vertical}
         </div>
         <div class="form-group">
           <label class="form-label">Assign To *</label>
-          <select class="form-input" id="a-assignee">
+          <select class="form-input" id="a-assignee" onchange="onAssigneeChange()">
             <option value="">Select employee…</option>
           </select>
         </div>
@@ -2448,6 +2448,49 @@ textarea.form-input{min-height:80px;resize:vertical}
       <div class="form-actions">
         <button class="btn btn-ghost" onclick="closeAssignModal()">Cancel</button>
         <button class="btn btn-primary" onclick="saveAssignment()">Save Assignment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div class="modal-bg" id="emp-modal">
+  <div class="modal assign-modal">
+    <div class="modal-head">
+      <h2>Add Employee</h2>
+      <button class="modal-close" onclick="closeEmpModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Full Name (First Last) *</label>
+          <input class="form-input" id="emp-name" type="text" placeholder="e.g. Jane Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Business Unit *</label>
+          <select class="form-input" id="emp-bu">
+            <option value="">Select business unit…</option>
+            <option value="full_arch">Full Arch</option>
+            <option value="restorative">Restorative</option>
+            <option value="removables">Removables</option>
+            <option value="eng">Engineering</option>
+            <option value="op">Operations</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role *</label>
+          <select class="form-input" id="emp-role">
+            <option value="">Select role…</option>
+            <option value="bu_leader">Business Unit Leader</option>
+            <option value="Tech">Tech</option>
+            <option value="Support">Support</option>
+            <option value="Engineer">Engineer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeEmpModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewEmployee()">Add Employee</button>
       </div>
     </div>
   </div>
@@ -3682,6 +3725,7 @@ function openAssignModal(id=null, preAssignee=null){
       document.getElementById('a-title').value = t.task_title||'';
       document.getElementById('a-raid-link').value = t.raid_item_id||'';
       document.getElementById('a-assignee').value = t.assignee||'';
+      EMP_PREV_ASSIGNEE = t.assignee||'';
       document.getElementById('a-priority').value = t.priority||'High';
       document.getElementById('a-category').value = t.category||'Action';
       document.getElementById('a-target').value = t.target_completion||'';
@@ -3693,6 +3737,7 @@ function openAssignModal(id=null, preAssignee=null){
     document.getElementById('a-title').value='';
     document.getElementById('a-raid-link').value='';
     document.getElementById('a-assignee').value = preAssignee||'';
+    EMP_PREV_ASSIGNEE = preAssignee||'';
     document.getElementById('a-priority').value='High';
     document.getElementById('a-category').value='Action';
     document.getElementById('a-target').value='EOD';
@@ -3715,17 +3760,47 @@ function editAssignment(id, e){ e.stopPropagation(); openAssignModal(id); }
 
 function closeAssignModal(){ document.getElementById('assign-modal').classList.remove('open'); }
 
+/* ── ADD EMPLOYEE ── */
+// Remembers the assignee selected before "+ Add new employee…" so we can
+// restore it if the user cancels the add-employee modal.
+let EMP_PREV_ASSIGNEE = '';
+function onAssigneeChange(){
+  const sel = document.getElementById('a-assignee');
+  if(sel.value==='__new__'){ openEmpModal(); return; }
+  EMP_PREV_ASSIGNEE = sel.value;
+}
+function openEmpModal(){
+  document.getElementById('emp-name').value='';
+  document.getElementById('emp-bu').value='';
+  document.getElementById('emp-role').value='';
+  document.getElementById('emp-modal').classList.add('open');
+}
+function closeEmpModal(){
+  document.getElementById('emp-modal').classList.remove('open');
+  // restore the assignee select (it was showing "+ Add new employee…")
+  document.getElementById('a-assignee').value = EMP_PREV_ASSIGNEE;
+}
+async function saveNewEmployee(){
+  const name = document.getElementById('emp-name').value.trim();
+  const bus_unit = document.getElementById('emp-bu').value;
+  const role = document.getElementById('emp-role').value;
+  if(!name){ alert('Full name is required'); return; }
+  if(!bus_unit){ alert('Business unit is required'); return; }
+  if(!role){ alert('Role is required'); return; }
+  await sbFetch('employees','POST',{name,bus_unit,role,department:'',active:true});
+  EMPLOYEES = await sbFetch('employees?active=eq.true&order=name');
+  EMP_PREV_ASSIGNEE = name;
+  document.getElementById('emp-modal').classList.remove('open');
+  // rebuild the dropdown for the current BU, force-include + select the new hire
+  populateAssigneeSelect(name);
+  document.getElementById('a-assignee').value = name;
+  if(typeof toast==='function') toast('Employee added ✓');
+}
+
 async function saveAssignment(){
   const id = document.getElementById('a-edit-id').value;
   let assignee = document.getElementById('a-assignee').value;
-  if(assignee==='__new__'){
-    assignee = prompt('Enter employee name:');
-    if(!assignee) return;
-    // add to employees table
-    await sbFetch('employees','POST',{name:assignee.trim(),department:'',role:'',active:true});
-    EMPLOYEES = await sbFetch('employees?active=eq.true&order=name');
-    populateAssigneeSelect(assignee.trim());
-  }
+  if(assignee==='__new__'){ openEmpModal(); return; }
   if(!assignee){ alert('Please select an employee'); return; }
   const title = document.getElementById('a-title').value.trim();
   if(!title){ alert('Task title is required'); return; }
