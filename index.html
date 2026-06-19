@@ -4026,7 +4026,8 @@ const OTD_OPS_BY_BU = {
     "DBTH - Case Entry", "DBTH - Case Review", "Place Parts", "Design Outsource",
     "Design QC", "Design Changes", "Design Bar", "Milling CAM - Bar",
     "Milling CAM - Arches", "Sintering", "Shape and Colorize", "Bar Cementing",
-    "Finishing PMMA", "Finishing Zirc", "Final QC", "Case Coordination"
+    "Finishing PMMA", "Stain & Glaze", "Pink Tissue", "Fitting", "Cement", "Repair",
+    "Final QC", "Case Coordination"
   ],
   'crown-bridge': [
     "Data Entry", "Case Review", "Implant Case Review", "Scan",
@@ -4830,6 +4831,15 @@ async function loadTargets() {
 // When a BU appears here, the Target column header drops its "(units / day)"
 // note and each row labels its own basis instead.
 const TARGET_BASIS_BY_BU = {
+  'full-arch': {
+    "DBTH - Case Entry": "cases", "DBTH - Case Review": "pans", "Place Parts": "pans",
+    "Design Outsource": "pans", "Design QC": "pans", "Design Changes": "pans",
+    "Design Bar": "pans", "Milling CAM - Bar": "pans", "Milling CAM - Arches": "pans",
+    "Sintering": "units", "Shape and Colorize": "units", "Bar Cementing": "units",
+    "Finishing PMMA": "units", "Stain & Glaze": "units", "Pink Tissue": "units",
+    "Fitting": "units", "Cement": "units", "Repair": "units", "Final QC": "units",
+    "Case Coordination": "cases"
+  },
   'crown-bridge': {
     "Data Entry": "cases", "Case Review": "pans", "Implant Case Review": "pans",
     "Scan": "pans", "Import Digital Impression": "cases", "Design": "pans",
