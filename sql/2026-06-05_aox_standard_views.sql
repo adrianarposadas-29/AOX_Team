@@ -57,7 +57,10 @@ WHERE fcs.report_date IS NOT NULL
   AND btrim(fcs.business_unit_l1) <> ''
 GROUP BY fcs.report_date, fcs.business_unit_l1, fcs.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_health_l2ad TO anon;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_bu_health_l2ad SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_bu_health_l2ad FROM anon;
+GRANT SELECT ON public.v_aox_bu_health_l2ad TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 2) v_aox_bu_revenue_l2ad — revenue by invoice date × L1 × L2 × a/d
@@ -80,7 +83,10 @@ WHERE fil.report_date IS NOT NULL
   AND btrim(fil.business_unit_l1) <> ''
 GROUP BY fil.report_date, fil.business_unit_l1, fil.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_revenue_l2ad TO anon;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_bu_revenue_l2ad SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_bu_revenue_l2ad FROM anon;
+GRANT SELECT ON public.v_aox_bu_revenue_l2ad TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 3) v_aox_bu_bookings_l2ad — bookings by received date × L1 × L2 × a/d
@@ -104,7 +110,10 @@ WHERE fil.received_date IS NOT NULL
   AND btrim(fil.business_unit_l1) <> ''
 GROUP BY fil.received_date, fil.business_unit_l1, fil.business_unit_l2, ad.analog_digital;
 
-GRANT SELECT ON public.v_aox_bu_bookings_l2ad TO anon;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_bu_bookings_l2ad SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_bu_bookings_l2ad FROM anon;
+GRANT SELECT ON public.v_aox_bu_bookings_l2ad TO authenticated;
 
 -- ============================================================================
 -- RECONCILIATION CHECK (run after applying). Expected (May 2026):

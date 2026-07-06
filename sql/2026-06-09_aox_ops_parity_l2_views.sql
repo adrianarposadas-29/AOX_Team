@@ -52,7 +52,10 @@ CREATE OR REPLACE VIEW public.daily_revenue_by_bu_l2 AS
 SELECT report_date, business_unit_l1, business_unit_l2,
        revenue, invoice_count, line_count, qualifying_units
 FROM reporting.daily_revenue_by_bu;
-GRANT SELECT ON public.daily_revenue_by_bu_l2 TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.daily_revenue_by_bu_l2 SET (security_invoker = on);
+REVOKE ALL ON public.daily_revenue_by_bu_l2 FROM anon;
+GRANT SELECT ON public.daily_revenue_by_bu_l2 TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 2) public.v_aox_otd_daily_l2_ops — OTD by L2, University EXCLUDED.
@@ -81,7 +84,10 @@ SELECT report_date, business_unit_l1, business_unit_l2,
        count(*) FILTER (WHERE is_on_time)::int    AS on_time_case_count
 FROM case_rollup
 GROUP BY report_date, business_unit_l1, business_unit_l2;
-GRANT SELECT ON public.v_aox_otd_daily_l2_ops TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_otd_daily_l2_ops SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_otd_daily_l2_ops FROM anon;
+GRANT SELECT ON public.v_aox_otd_daily_l2_ops TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 3) public.v_aox_tat_daily_l2_ops — TAT by L2, University EXCLUDED.
@@ -103,7 +109,10 @@ WHERE vc.report_date IS NOT NULL
        WHERE trim(acc."Account Number") = trim(vc.account_id)
          AND lower(trim(acc."Market Segment")) = 'university')
 GROUP BY vc.report_date, vc.business_unit_l1, vc.business_unit_l2;
-GRANT SELECT ON public.v_aox_tat_daily_l2_ops TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_tat_daily_l2_ops SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_tat_daily_l2_ops FROM anon;
+GRANT SELECT ON public.v_aox_tat_daily_l2_ops TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 4) public.v_aox_remake_daily_l2_ops — remake / quality by L2, University
@@ -126,7 +135,10 @@ WHERE vc.report_date IS NOT NULL
        WHERE trim(acc."Account Number") = trim(vc.account_id)
          AND lower(trim(acc."Market Segment")) = 'university')
 GROUP BY vc.report_date, vc.business_unit_l1, vc.business_unit_l2;
-GRANT SELECT ON public.v_aox_remake_daily_l2_ops TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_remake_daily_l2_ops SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_remake_daily_l2_ops FROM anon;
+GRANT SELECT ON public.v_aox_remake_daily_l2_ops TO authenticated;
 
 -- ============================================================================
 -- RECONCILIATION (read-only; verified live 2026-06-09, full month

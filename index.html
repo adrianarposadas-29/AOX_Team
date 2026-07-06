@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- saved from url=(0068)file:///C:/Users/AdrianaPosadas/Downloads/SK_AoX_RAID_Log%20(7).html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -8,7 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AoX Ops">
 <meta name="theme-color" content="#ffffff">
-<link rel="manifest" href="file:///C:/Users/AdrianaPosadas/Downloads/manifest.json">
 <link rel="icon" type="image/png" href="logos/clearpath-mark-black.png" />
 <link rel="icon" type="image/png" href="logos/clearpath-mark-white.png" media="(prefers-color-scheme: dark)" />
 <link rel="apple-touch-icon" href="logos/clearpath-mark-black.png" />
@@ -1112,6 +1110,17 @@ textarea.form-input{min-height:80px;resize:vertical}
 </head>
 <body>
 
+<!-- ══ SIGN-IN GATE — added for Supabase RLS hardening. Covers the app until a valid @skdla.com session exists. ══ -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:99999;background:#0f2233;display:flex;align-items:center;justify-content:center;font-family:inherit">
+  <div style="background:#fff;border-radius:14px;padding:40px 44px;max-width:380px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center">
+    <img src="logos/clearpath-black.png" alt="ClearPath" style="height:34px;margin-bottom:6px">
+    <div style="font-size:13px;color:#5a7089;font-weight:600;margin-bottom:22px">Operating System · AOX Team</div>
+    <div style="font-size:15px;color:#25405a;margin-bottom:24px;line-height:1.5">Sign in with your <strong>@skdla.com</strong> account to continue.</div>
+    <button id="login-btn" type="button" style="width:100%;padding:12px;border:0;border-radius:8px;background:#1882C7;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Sign in with Microsoft</button>
+    <div id="login-msg" style="margin-top:16px;font-size:13px;color:#dc2626;min-height:18px"></div>
+  </div>
+</div>
+
 <!-- CLEARPATH OS - STANDARD MODULE HEADER -->
 <header class="cpx-header">
   <!-- LEFT - brand lockup + module title (FIXED) -->
@@ -1146,6 +1155,11 @@ textarea.form-input{min-height:80px;resize:vertical}
         </div>
       </div>
     </div>
+  </div>
+  <!-- signed-in user + sign out (auth) -->
+  <div id="cpx-user" hidden style="display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:12px;color:#5a7089">
+    <span id="cpx-user-email" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button type="button" onclick="window.__sbSignOut&&window.__sbSignOut()" style="border:1px solid #dde6ee;border-radius:16px;background:#f5f8fb;color:#25405a;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer">Sign out</button>
   </div>
   <!-- RIGHT - Spectrum Killian endorsement (FIXED) -->
   <img class="cpx-sk" src="logos/spectrum-killian-stacked-color.png" alt="Spectrum Killian">
@@ -2895,14 +2909,23 @@ let sortDir = 1;
 async function sbFetch(path, method='GET', body=null){
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000); // 12s timeout
+  // Identity is the signed-in user's JWT, not the anon key. The DB now enforces
+  // RLS (@skdla.com staff only), so requests without a live session are rejected.
+  const token = window.__sbAuthToken;
+  if(!token){ window.__showLogin && window.__showLogin(); throw new Error('Please sign in with your SKDLA account.'); }
   try {
     const opts = {
       method,
       signal: controller.signal,
-      headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'}
+      headers:{'apikey':SB_KEY,'Authorization':`Bearer ${token}`,'Content-Type':'application/json','Prefer':'return=representation'}
     };
     if(body) opts.body = JSON.stringify(body);
     const r = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+    if(r.status===401 || r.status===403){
+      // Session expired or lost — send the user back to the login gate.
+      window.__showLogin && window.__showLogin('Your session expired — please sign in again.');
+      throw new Error(`${r.status}: not authorized`);
+    }
     if(!r.ok){
       const msg = await r.text();
       throw new Error(`${r.status}: ${msg}`);
@@ -3415,7 +3438,7 @@ async function deleteItem(id){
 /* ════════════════════════════════════════════
    UTILS
 ════════════════════════════════════════════ */
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function toast(msg){
   const t=document.getElementById('toast');
@@ -3527,7 +3550,7 @@ function renderLanes(){
         <div class="emp-avatar" style="background:${color}">${initials}</div>
         <div>
           <div class="emp-name">${esc(emp)}</div>
-          <div class="emp-role">${empObj?.department||''} ${empObj?.role?'· '+empObj.role:''}</div>
+          <div class="emp-role">${esc(empObj?.department||'')} ${empObj?.role?'· '+esc(empObj.role):''}</div>
         </div>
         <div class="emp-lane-stats">
           ${done?`<span class="emp-stat emp-stat-done">✓ ${done} done</span>`:''}
@@ -3923,7 +3946,9 @@ function renderEOD(){
 // Close assign modal on bg click
 document.getElementById('assign-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeAssignModal(); });
 
-// Boot
+// Boot — invoked by the auth layer (module script below) only once a valid
+// @skdla.com session exists. Not called on page load anymore.
+function boot(){
 const _autoReloadState = readAutoReloadState(); // snapshot saved before an hourly auto-reload (or null)
 restoreActiveTab(_autoReloadState);             // tab/view can be restored immediately
 loadData().then(() => restoreFiltersAndScroll(_autoReloadState)); // filters/scroll need data first
@@ -3946,6 +3971,8 @@ setInterval(() => {
   } catch (e) {}
   window.location.reload();
 }, 3600000);
+}
+window.__boot = boot; // the auth layer calls this after a valid session is confirmed
 
 // Read + clear the pre-reload snapshot. Returns the parsed object, or null.
 function readAutoReloadState(){
@@ -4260,7 +4287,7 @@ function buildOTDCards() {
     const s = otdSlug(op);
     return `<div class="otd-card" id="otd-c-${s}">
       <div class="otd-card-hd">
-        <div class="otd-card-name">${op}</div>
+        <div class="otd-card-name">${esc(op)}</div>
         <div class="otd-pill empty" id="otd-p-${s}">-</div>
       </div>
       <div class="otd-card-body">
@@ -4484,7 +4511,9 @@ function otdExport() {
     const tgt = targetsData[op]?.target_value ?? '';
     rows.push([otdDate,op,tgt,d.supervisor||'',d.units_planned||'',d.units_actual||'',l,pct,d.notes||'']);
   });
-  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  // Neutralize CSV/formula injection: a cell starting with = + - @ (or tab/CR) is prefixed with a single quote
+  const csvCell = v => { let s=String(v); if(/^[=+\-@\t\r]/.test(s)) s="'"+s; return '"'+s.replace(/"/g,'""')+'"'; };
+  const csv=rows.map(r=>r.map(csvCell).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='OTD_'+otdDate+'.csv'; a.click(); toast('CSV exported ✓');
 }
@@ -6089,6 +6118,66 @@ restoreCollapseStates();
 
 </script>
 
+<!-- ══ AUTH LAYER — Supabase Auth (Microsoft SSO). Provides the signed-in user's JWT to sbFetch; the app boots only for a valid @skdla.com session. ══ -->
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SB_URL = 'https://asdunkqodixbhbohxtuq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzZHVua3FvZGl4Ymhib2h4dHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDUwNTcsImV4cCI6MjA5MDgyMTA1N30.lStrSSEpwFFk5GuXl2qzh2tr6bLZFY4_x9u6q4FcVeo';
+const ALLOWED_DOMAIN = '@skdla.com';
+
+const sb = createClient(SB_URL, SB_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+});
+
+const gate      = document.getElementById('login-gate');
+const msgEl     = document.getElementById('login-msg');
+const chip      = document.getElementById('cpx-user');
+const chipEmail = document.getElementById('cpx-user-email');
+
+window.__sbAuthToken = null;
+window.__sbSignOut = () => sb.auth.signOut();
+window.__showLogin = (m) => {
+  if (gate) gate.style.display = 'flex';
+  if (chip) chip.hidden = true;
+  window.__sbAuthToken = null;
+  if (m && msgEl) msgEl.textContent = m;
+};
+
+function showApp(email){
+  if (gate) gate.style.display = 'none';
+  if (chip) { chip.hidden = false; chipEmail.textContent = email; }
+}
+
+async function applySession(session){
+  const email = (session?.user?.email || '').toLowerCase();
+  if (session && email.endsWith(ALLOWED_DOMAIN)) {
+    window.__sbAuthToken = session.access_token;   // this is what sbFetch sends as Bearer
+    showApp(session.user.email);
+    if (!window.__booted) { window.__booted = true; try { window.__boot && window.__boot(); } catch(e){ console.error(e); } }
+    return;
+  }
+  window.__sbAuthToken = null;
+  if (session && email && !email.endsWith(ALLOWED_DOMAIN)) {
+    await sb.auth.signOut();
+    window.__showLogin('That account isn’t an @skdla.com address. Please use your SKDLA login.');
+  } else {
+    window.__showLogin();
+  }
+}
+
+document.getElementById('login-btn').addEventListener('click', () => {
+  if (msgEl) msgEl.textContent = '';
+  sb.auth.signInWithOAuth({
+    provider: 'azure',
+    options: { scopes: 'email', redirectTo: window.location.origin + window.location.pathname }
+  });
+});
+
+sb.auth.onAuthStateChange((_evt, session) => { applySession(session); });
+const { data: { session } } = await sb.auth.getSession();
+await applySession(session);
+</script>
 
 
 </body></html>
