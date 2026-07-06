@@ -38,7 +38,10 @@ SELECT report_date,
        business_unit_l1
 FROM reporting.otd_daily_l2;
 
-GRANT SELECT ON public.otd_daily_l2 TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.otd_daily_l2 SET (security_invoker = on);
+REVOKE ALL ON public.otd_daily_l2 FROM anon;
+GRANT SELECT ON public.otd_daily_l2 TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 2) public.tat_daily_l2 — 1:1 pass-through of reporting.tat_daily_l2.
@@ -54,7 +57,10 @@ SELECT report_date,
        business_unit_l1
 FROM reporting.tat_daily_l2;
 
-GRANT SELECT ON public.tat_daily_l2 TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.tat_daily_l2 SET (security_invoker = on);
+REVOKE ALL ON public.tat_daily_l2 FROM anon;
+GRANT SELECT ON public.tat_daily_l2 TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 3) public.v_aox_bookings_daily_l2 — NEW aggregation (module-prefixed per
@@ -79,7 +85,10 @@ WHERE li."Received Date" >= '2024-04-01'
   AND nullif(trim(dp.business_unit_l2), '') IS NOT NULL
 GROUP BY 1, 2, 3;
 
-GRANT SELECT ON public.v_aox_bookings_daily_l2 TO anon, authenticated;
+-- Security hardening (2026-07): run as the caller so RLS applies, and deny anon.
+ALTER VIEW public.v_aox_bookings_daily_l2 SET (security_invoker = on);
+REVOKE ALL ON public.v_aox_bookings_daily_l2 FROM anon;
+GRANT SELECT ON public.v_aox_bookings_daily_l2 TO authenticated;
 
 -- ============================================================================
 -- RECONCILIATION CHECK (read-only; verified live 2026-06-09 against the
